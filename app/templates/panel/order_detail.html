@@ -1,0 +1,48 @@
+{% extends "panel/_base.html" %}
+{% block title %}Order #{{ order.id }} · Panel{% endblock %}
+{% block panel_title %}Order #{{ order.id }}{% endblock %}
+
+{% block panel_content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card p-4">
+      <h2 class="h6 text-muted text-uppercase mb-3">Items</h2>
+      <ul class="list-unstyled mb-0">
+        {% for item in order.items %}
+          <li class="d-flex justify-content-between py-2 border-bottom">
+            <div>
+              <div class="fw-semibold">{{ item.product.name }}</div>
+              <small class="text-muted">{{ item.quantity }} × ${{ '%.2f'|format(item.price_at_purchase) }}</small>
+            </div>
+            <strong>${{ '%.2f'|format(item.price_at_purchase * item.quantity) }}</strong>
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="d-flex justify-content-between mt-3">
+        <strong>Total</strong><strong>${{ '%.2f'|format(order.total_amount) }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card p-4 mb-4">
+      <h2 class="h6 text-muted text-uppercase mb-3">Customer</h2>
+      <div class="fw-semibold">{{ order.user.name }}</div>
+      <div class="text-muted small">{{ order.user.phone }}</div>
+      <hr>
+      <div class="text-muted small">Shipping address</div>
+      <div>{{ order.shipping_address }}</div>
+    </div>
+
+    <form method="post" class="card p-4">
+      <h2 class="h6 text-muted text-uppercase mb-3">Update status</h2>
+      <select name="status" class="form-select mb-3">
+        {% for s in ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] %}
+          <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-dark w-100">Save</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

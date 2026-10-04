@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="panel">
+  <aside class="panel__side">
+    <h6>Catalog</h6>
+    <a href="{{ url_for('staff.dashboard') }}" class="{{ 'active' if request.endpoint == 'staff.dashboard' }}">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+    <a href="{{ url_for('staff.products') }}" class="{{ 'active' if request.endpoint in ['staff.products','staff.product_new','staff.product_edit'] }}">
+      <i class="bi bi-box"></i> Products
+    </a>
+    <a href="{{ url_for('staff.categories') }}" class="{{ 'active' if request.endpoint in ['staff.categories','staff.category_new','staff.category_edit'] }}">
+      <i class="bi bi-tags"></i> Categories
+    </a>
+
+    <h6>Sales</h6>
+    <a href="{{ url_for('staff.orders') }}" class="{{ 'active' if request.endpoint in ['staff.orders','staff.order_detail'] }}">
+      <i class="bi bi-bag-check"></i> Orders
+    </a>
+
+    {% if current_user.is_admin() %}
+      <h6>Admin</h6>
+      <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.endpoint == 'admin.dashboard' }}">
+        <i class="bi bi-shield-lock"></i> Overview
+      </a>
+      <a href="{{ url_for('admin.users') }}" class="{{ 'active' if request.endpoint == 'admin.users' }}">
+        <i class="bi bi-people"></i> Users
+      </a>
+      <a href="/admin-panel">
+        <i class="bi bi-database"></i> DB panel
+      </a>
+    {% endif %}
+  </aside>
+
+  <section class="panel__main">
+    <div class="panel__header">
+      <h1>{% block panel_title %}Panel{% endblock %}</h1>
+      <div>{% block panel_actions %}{% endblock %}</div>
+    </div>
+    {% block panel_content %}{% endblock %}
+  </section>
+</div>
+{% endblock %}

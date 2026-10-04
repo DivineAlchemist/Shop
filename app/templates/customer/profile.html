@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}My profile · Raven{% endblock %}
+
+{% block content %}
+<div class="section py-5" style="max-width: 700px;">
+  <h1 class="h3 mb-4">My profile</h1>
+
+  <div class="card p-4 mb-4">
+    <h2 class="h6 text-muted text-uppercase mb-3">Account</h2>
+    <dl class="row mb-0">
+      <dt class="col-sm-3">Name</dt><dd class="col-sm-9">{{ current_user.name }}</dd>
+      <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">{{ current_user.phone }}</dd>
+      <dt class="col-sm-3">Role</dt><dd class="col-sm-9">{{ current_user.role }}</dd>
+      <dt class="col-sm-3">Member since</dt><dd class="col-sm-9">{{ current_user.created_at.strftime('%b %d, %Y') }}</dd>
+    </dl>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-6">
+      <a href="{{ url_for('customer.orders') }}" class="card p-4 d-block text-center h-100">
+        <i class="bi bi-receipt fs-1 mb-2"></i>
+        <div class="fw-semibold">My orders</div>
+        <small class="text-muted">{{ current_user.orders|length }} order(s)</small>
+      </a>
+    </div>
+    <div class="col-6">
+      <a href="{{ url_for('customer.cart') }}" class="card p-4 d-block text-center h-100">
+        <i class="bi bi-bag fs-1 mb-2"></i>
+        <div class="fw-semibold">Cart</div>
+        <small class="text-muted">{{ current_user.cart_items|length }} item(s)</small>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

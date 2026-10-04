@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}401 · Not Logged In{% endblock %}
+{% block content %}
+<div class="empty" style="padding: 6rem 1rem;">
+  <i class="bi bi-exclamation-triangle"></i>
+  <h1 class="h3 mt-3">401 . Not Logged In</h1>
+  <p>You need to login to view this page.</p>
+  <a href="{{ url_for('customer.index') }}" class="btn btn-dark mt-3">Go home</a>
+</div>
+{% endblock %}

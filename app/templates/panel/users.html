@@ -1,0 +1,30 @@
+{% extends "panel/_base.html" %}
+{% block title %}Users · Panel{% endblock %}
+{% block panel_title %}Users{% endblock %}
+
+{% block panel_content %}
+<div class="table-card">
+  <table class="table mb-0 align-middle">
+    <thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+    <tbody>
+      {% for u in users %}
+        <tr>
+          <td>{{ u.name }}</td>
+          <td>{{ u.phone }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.set_role', user_id=u.id) }}" class="d-flex gap-2">
+              <select name="role" class="form-select form-select-sm" style="max-width:130px;">
+                {% for r in ['customer','staff','admin'] %}
+                  <option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn btn-sm btn-outline-dark">Set</button>
+            </form>
+          </td>
+          <td>{{ u.created_at.strftime('%b %d, %Y') }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

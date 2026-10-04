@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Users</h2>
+<table class="table bg-white rounded">
+  <thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.name }}</td>
+      <td>{{ u.phone }}</td>
+      <td><span class="badge bg-{{ 'danger' if u.role=='admin' else 'warning' if u.role=='staff' else 'secondary' }}">{{ u.role }}</span></td>
+      <td>{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+      <td>
+        <form method="post" action="{{ url_for('admin.set_role', user_id=u.id) }}" class="d-flex gap-2">
+          <select name="role" class="form-select form-select-sm" style="width:auto;">
+            {% for r in ['customer','staff','admin'] %}
+              <option value="{{ r }}" {{ 'selected' if u.role == r else '' }}>{{ r }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-sm btn-outline-primary">Set</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,41 @@
+<footer class="footer">
+  <div class="footer__inner">
+    <div>
+      <div class="nav__brand text-white mb-3"><i class="bi bi-tree-fill"></i> Raven</div>
+      <p style="max-width: 280px;">Curated essentials for everyday life. Free shipping over $50.</p>
+    </div>
+    <div>
+      <h4>Shop</h4>
+      <ul class="list-unstyled d-grid gap-2">
+        <li><a href="{{ url_for('customer.index') }}">All products</a></li>
+        <li><a href="{{ url_for('customer.index', category=1) }}">Electronics</a></li>
+        <li><a href="{{ url_for('customer.index', category=2) }}">Books</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Support</h4>
+      <ul class="list-unstyled d-grid gap-2">
+        <li><a href="#">Shipping</a></li>
+        <li><a href="#">Returns</a></li>
+        <li><a href="#">Terms &amp; conditions</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul class="list-unstyled d-grid gap-2">
+        <li><i class="bi bi-envelope me-2"></i>hello@raven.example</li>
+        <li><i class="bi bi-telephone me-2"></i>958-775-6884</li>
+      </ul>
+      <div class="footer__social mt-3">
+        <a href="#"><i class="bi bi-facebook"></i></a>
+        <a href="#"><i class="bi bi-instagram"></i></a>
+        <a href="#"><i class="bi bi-telegram"></i></a>
+        <a href="#"><i class="bi bi-whatsapp"></i></a>
+      </div>
+    </div>
+  </div>
+  <div class="footer__bottom">
+    <span>&copy; {{ 2025 }} Raven. All rights reserved.</span>
+    <span>Made with care.</span>
+  </div>
+</footer>

@@ -1,0 +1,86 @@
+<nav class="nav">
+  <div class="nav__inner">
+    <div class="nav__left">
+      <button class="nav__icon-btn" data-bs-toggle="offcanvas" data-bs-target="#mainMenu" aria-label="Menu">
+        <i class="bi bi-list"></i>
+      </button>
+      <a href="{{ url_for('customer.index') }}" class="nav__icon-btn position-relative" aria-label="Cart">
+        <i class="bi bi-bag"></i>
+        {% if current_user.is_authenticated and current_user.cart_items %}
+          <span class="nav__badge">{{ current_user.cart_items|length }}</span>
+        {% endif %}
+      </a>
+    </div>
+
+    <a href="{{ url_for('customer.index') }}" class="nav__brand">
+      <i class="bi bi-tree-fill"></i> Raven
+    </a>
+
+    <div class="nav__right">
+      <button class="nav__icon-btn" data-bs-toggle="collapse" data-bs-target="#searchPanel"
+              aria-expanded="false" aria-controls="searchPanel" aria-label="Search">
+        <i class="bi bi-search"></i>
+      </button>
+
+      {% if current_user.is_authenticated %}
+        <div class="dropdown">
+          <button class="nav__icon-btn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account">
+            <i class="bi bi-person"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <li class="px-3 py-2">
+              <div class="fw-semibold">{{ current_user.name }}</div>
+              <small class="text-muted">{{ current_user.phone }}</small>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('customer.profile') }}"><i class="bi bi-person me-2"></i>My profile</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('customer.orders') }}"><i class="bi bi-receipt me-2"></i>My orders</a></li>
+            {% if current_user.is_staff() %}
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('staff.dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Staff panel</a></li>
+            {% endif %}
+            {% if current_user.is_admin() %}
+              <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-shield-lock me-2"></i>Admin panel</a></li>
+            {% endif %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+          </ul>
+        </div>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-dark btn-sm px-3">Login</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mainMenu" style="max-width: 320px;">
+  <div class="offcanvas-header border-bottom">
+    <span class="nav__brand"><i class="bi bi-tree-fill"></i> Raven</span>
+    <button class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body p-3">
+    <ul class="list-unstyled mb-0">
+      <li><a class="panel__side-link d-block py-2 px-3 rounded" href="{{ url_for('customer.index') }}"><i class="bi bi-shop me-2"></i>Shop</a></li>
+      {% if current_user.is_authenticated %}
+        <li><a class="d-block py-2 px-3 rounded" href="{{ url_for('customer.orders') }}"><i class="bi bi-receipt me-2"></i>My orders</a></li>
+        <li><a class="d-block py-2 px-3 rounded" href="{{ url_for('customer.profile') }}"><i class="bi bi-person me-2"></i>My profile</a></li>
+      {% endif %}
+      {% if current_user.is_authenticated and current_user.is_staff() %}
+        <li class="mt-3"><small class="text-muted px-3">Staff</small></li>
+        <li><a class="d-block py-2 px-3 rounded" href="{{ url_for('staff.dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+        <li><a class="d-block py-2 px-3 rounded" href="{{ url_for('staff.products') }}"><i class="bi bi-box me-2"></i>Products</a></li>
+        <li><a class="d-block py-2 px-3 rounded" href="{{ url_for('staff.categories') }}"><i class="bi bi-tags me-2"></i>Categories</a></li>
+        <li><a class="d-block py-2 px-3 rounded" href="{{ url_for('staff.orders') }}"><i class="bi bi-bag-check me-2"></i>Orders</a></li>
+      {% endif %}
+      {% if current_user.is_authenticated and current_user.is_admin() %}
+        <li class="mt-3"><small class="text-muted px-3">Admin</small></li>
+        <li><a class="d-block py-2 px-3 rounded" href="{{ url_for('admin.users') }}"><i class="bi bi-people me-2"></i>Users</a></li>
+        <li><a class="d-block py-2 px-3 rounded" href="/admin-panel"><i class="bi bi-database me-2"></i>DB panel</a></li>
+      {% endif %}
+      {% if not current_user.is_authenticated %}
+        <li class="mt-3"><a class="btn btn-dark w-100" href="{{ url_for('auth.login') }}">Login</a></li>
+        <li class="mt-2"><a class="btn btn-outline-dark w-100" href="{{ url_for('auth.register') }}">Register</a></li>
+      {% endif %}
+    </ul>
+  </div>
+</div>

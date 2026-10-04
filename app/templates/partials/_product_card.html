@@ -1,0 +1,14 @@
+<div class="card h-100">
+  <a href="{{ url_for('customer.product_detail', slug=p.slug) }}">
+    <img src="{{ p.image_url or 'https://picsum.photos/seed/' ~ p.id ~ '/500/375' }}"
+         class="card__img" alt="{{ p.name }}">
+  </a>
+  <div class="card__body d-flex flex-column">
+    <small class="text-muted">{{ p.category.name if p.category else 'Uncategorized' }}</small>
+    <h6 class="mt-1 mb-2">{{ p.name }}</h6>
+    <div class="mt-auto d-flex justify-content-between align-items-center">
+      <strong>${{ '%.2f'|format(p.price) }}</strong>
+      <a href="{{ url_for('customer.product_detail', slug=p.slug) }}" class="btn btn-sm btn-outline-dark">View</a>
+    </div>
+  </div>
+</div>

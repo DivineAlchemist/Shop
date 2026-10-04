@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Orders</h2>
+<div class="mb-3">
+  <a href="{{ url_for('staff.orders') }}" class="btn btn-sm {{ 'btn-primary' if not current_status else 'btn-outline-primary' }}">All</a>
+  {% for s in ['pending','processing','shipped','delivered','cancelled'] %}
+    <a href="{{ url_for('staff.orders', status=s) }}"
+       class="btn btn-sm {{ 'btn-primary' if current_status == s else 'btn-outline-primary' }}">{{ s|capitalize }}</a>
+  {% endfor %}
+</div>
+<table class="table bg-white rounded">
+  <thead><tr><th>#</th><th>Customer</th><th>Date</th><th>Status</th><th>Total</th><th></th></tr></thead>
+  <tbody>
+    {% for o in orders %}
+    <tr>
+      <td>{{ o.id }}</td>
+      <td>{{ o.user.name }}</td>
+      <td>{{ o.created_at.strftime('%Y-%m-%d') }}</td>
+      <td>{{ o.status }}</td>
+      <td>${{ '%.2f'|format(o.total_amount) }}</td>
+      <td><a href="{{ url_for('staff.order_detail', order_id=o.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

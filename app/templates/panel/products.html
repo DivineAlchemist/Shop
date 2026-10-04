@@ -1,0 +1,43 @@
+{% extends "panel/_base.html" %}
+{% block title %}Products · Panel{% endblock %}
+{% block panel_title %}Products{% endblock %}
+{% block panel_actions %}
+  <a href="{{ url_for('staff.product_new') }}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i>New product</a>
+{% endblock %}
+
+{% block panel_content %}
+<div class="table-card">
+  <table class="table mb-0 align-middle">
+    <thead>
+      <tr><th style="width:64px;"></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Active</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+        <tr>
+          <td>
+            <img src="{{ p.image_url or 'https://picsum.photos/seed/' ~ p.id ~ '/60/60' }}"
+                 style="width:44px;height:44px;object-fit:cover;border-radius:8px;" alt="">
+          </td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.category.name if p.category else '—' }}</td>
+          <td>${{ '%.2f'|format(p.price) }}</td>
+          <td>{{ p.stock }}</td>
+          <td>
+            {% if p.is_active %}<i class="bi bi-check-circle-fill text-success"></i>
+            {% else %}<i class="bi bi-x-circle-fill text-muted"></i>{% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('staff.product_edit', product_id=p.id) }}" class="btn btn-sm btn-outline-dark">Edit</a>
+            <form method="post" action="{{ url_for('staff.product_delete', product_id=p.id) }}" class="d-inline"
+                  onsubmit="return confirm('Delete this product?');">
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-muted text-center py-4">No products yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

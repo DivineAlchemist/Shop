@@ -1,0 +1,41 @@
+{% extends "panel/_base.html" %}
+{% block title %}Dashboard · Panel{% endblock %}
+{% block panel_title %}Dashboard{% endblock %}
+
+{% block panel_content %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat"><div class="stat__label">Products</div><div class="stat__value">{{ total_products }}</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat"><div class="stat__label">Orders</div><div class="stat__value">{{ total_orders }}</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat"><div class="stat__label">Pending</div><div class="stat__value">{{ pending_orders }}</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat"><div class="stat__label">Revenue</div><div class="stat__value">${{ '%.2f'|format(revenue or 0) }}</div></div>
+  </div>
+</div>
+
+<h2 class="h6 text-muted text-uppercase mb-3">Recent orders</h2>
+<div class="table-card">
+  <table class="table mb-0 align-middle">
+    <thead><tr><th>#</th><th>Customer</th><th>Status</th><th>Total</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+      {% for o in recent_orders %}
+        <tr>
+          <td>#{{ o.id }}</td>
+          <td>{{ o.user.name }}</td>
+          <td><span class="badge text-bg-secondary">{{ o.status }}</span></td>
+          <td>${{ '%.2f'|format(o.total_amount) }}</td>
+          <td>{{ o.created_at.strftime('%b %d, %H:%M') }}</td>
+          <td class="text-end"><a href="{{ url_for('staff.order_detail', order_id=o.id) }}" class="btn btn-sm btn-outline-dark">View</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="text-muted text-center py-4">No orders yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

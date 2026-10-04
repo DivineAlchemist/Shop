@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Categories</h2>
+  <a href="{{ url_for('staff.category_new') }}" class="btn btn-primary">+ New Category</a>
+</div>
+
+<table class="table bg-white rounded align-middle">
+  <thead>
+    <tr>
+      <th style="width:80px;">Image</th>
+      <th>Name</th>
+      <th>Slug</th>
+      <th>Products</th>
+      <th>Visible</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in categories %}
+    <tr>
+      <td>
+        {% if c.image_url %}
+          <img src="{{ c.image_url }}" alt="{{ c.name }}"
+               style="width:60px;height:60px;object-fit:cover;border-radius:6px;">
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </td>
+      <td>{{ c.name }}</td>
+      <td><code>{{ c.slug }}</code></td>
+      <td>{{ c.products|length }}</td>
+      <td>{{ '✅' if c.visible else '❌' }}</td>
+      <td class="text-end">
+        <a href="{{ url_for('staff.category_edit', category_id=c.id) }}"
+           class="btn btn-sm btn-outline-secondary">Edit</a>
+        <form method="post"
+              action="{{ url_for('staff.category_delete', category_id=c.id) }}"
+              class="d-inline"
+              onsubmit="return confirm('Delete this category?');">
+          <button class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="text-muted text-center py-3">No categories yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

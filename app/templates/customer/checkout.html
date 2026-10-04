@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Checkout · Raven{% endblock %}
+
+{% block content %}
+<div class="section py-5" style="max-width: 800px;">
+  <h1 class="h3 mb-4">Checkout</h1>
+
+  <form method="post" class="card p-4">
+    <h2 class="h6 text-muted text-uppercase mb-3">Shipping address</h2>
+    <textarea name="address" class="form-control mb-4" rows="3" required
+              placeholder="Street, city, postal code...">{{ request.form.get('address', '') }}</textarea>
+
+    <h2 class="h6 text-muted text-uppercase mb-3">Order summary</h2>
+    <ul class="list-unstyled mb-4">
+      {% for item in items %}
+        <li class="d-flex justify-content-between py-2 border-bottom">
+          <span>{{ item.product.name }} × {{ item.quantity }}</span>
+          <strong>${{ '%.2f'|format(item.product.price * item.quantity) }}</strong>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <div class="d-flex justify-content-between mb-4">
+      <strong>Total</strong>
+      <strong>
+        ${% set ns = namespace(total=0) %}
+        {% for item in items %}{% set ns.total = ns.total + item.product.price * item.quantity %}{% endfor %}
+        {{ '%.2f'|format(ns.total) }}
+      </strong>
+    </div>
+
+    <button class="btn btn-dark w-100 py-3">Place order</button>
+  </form>
+</div>
+{% endblock %}

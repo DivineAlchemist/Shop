@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} · Raven{% endblock %}
+
+{% block content %}
+<div class="section py-5">
+  <nav class="mb-4 small text-muted">
+    <a href="{{ url_for('customer.index') }}">Shop</a>
+    {% if product.category %} / <a href="{{ url_for('customer.index', category=product.category.id) }}">{{ product.category.name }}</a>{% endif %}
+    / <span>{{ product.name }}</span>
+  </nav>
+
+  <div class="row g-5">
+    <div class="col-md-6">
+      <div class="card">
+        <img src="{{ product.image_url or 'https://picsum.photos/seed/' ~ product.id ~ '/800/600' }}"
+             class="w-100" style="aspect-ratio:4/3; object-fit:cover;" alt="{{ product.name }}">
+      </div>
+    </div>
+    <div class="col-md-6 d-flex flex-column">
+      <small class="text-muted">{{ product.category.name if product.category else 'Uncategorized' }}</small>
+      <h1 class="h2 mt-1">{{ product.name }}</h1>
+      <div class="display-6 fw-bold mt-3">${{ '%.2f'|format(product.price) }}</div>
+
+      <p class="mt-4">{{ product.description or 'No description provided.' }}</p>
+
+      <div class="mt-4 d-flex align-items-center gap-3">
+        <span class="badge {{ 'text-bg-success' if product.stock > 0 else 'text-bg-danger' }}">
+          {{ 'In stock (' ~ product.stock ~ ')' if product.stock > 0 else 'Out of stock' }}
+        </span>
+      </div>
+
+      {% if product.stock > 0 %}
+        <form class="mt-4 d-flex gap-2" method="post"
+              action="{{ url_for('customer.add_to_cart', product_id=product.id) }}">
+          <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}"
+                 class="form-control" style="max-width:110px;">
+          <button class="btn btn-dark flex-grow-1"><i class="bi bi-bag-plus me-2"></i>Add to cart</button>
+        </form>
+      {% else %}
+        <button class="btn btn-secondary mt-4" disabled>Out of stock</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

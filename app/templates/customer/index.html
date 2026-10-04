@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Shop · Raven{% endblock %}
+
+{% block content %}
+
+{# ---------- Hero / featured slider (from latest products) ---------- #}
+{% if latest_products %}
+<div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+  <div class="carousel-inner">
+    {% for p in latest_products %}
+      <div class="carousel-item {% if loop.first %}active{% endif %}">
+        <div style="position:relative; height: 480px; overflow:hidden;">
+          <img src="{{ p.image_url or 'https://picsum.photos/seed/' ~ p.id ~ '/1600/600' }}"
+               class="w-100 h-100" style="object-fit:cover;" alt="{{ p.name }}">
+          <div style="position:absolute; inset:0; background:linear-gradient(to right, rgba(0,0,0,.55), transparent);"></div>
+          <div class="section" style="position:absolute; inset:0; display:flex; align-items:center;">
+            <div class="text-white" style="max-width:520px;">
+              <h2 class="display-5 fw-bold mb-2">{{ p.name }}</h2>
+              <p class="mb-4 opacity-75">{{ p.description[:140] }}{% if p.description|length > 140 %}…{% endif %}</p>
+              <a href="{{ url_for('customer.product_detail', slug=p.slug) }}" class="btn btn-light btn-lg px-4">View product</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon"></span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon"></span>
+  </button>
+</div>
+{% endif %}
+
+{# ---------- Popular / new arrivals ---------- #}
+{% if latest_products %}
+<div class="section--center"><span class="pill-title">New arrivals</span></div>
+<div class="section">
+  <div class="scroller">
+    {% for p in latest_products %}
+      {% include 'partials/_product_card.html' %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ---------- Shop by category ---------- #}
+{% if categories %}
+<div class="section--center"><span class="pill-title">Shop by category</span></div>
+<div class="section">
+  <div class="grid">
+    {% for c in categories %}
+      <a class="cat-tile" href="{{ url_for('customer.index', category=c.id) }}">
+        <img src="{{ c.image_url or 'https://picsum.photos/seed/cat' ~ c.id ~ '/400/400' }}" alt="{{ c.name }}">
+        <span>{{ c.name }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ---------- All products ---------- #}
+<div class="section--center"><span class="pill-title">
+  {% if search %}Results for "{{ search }}"{% elif current_category %}Category{% else %}All products{% endif %}
+</span></div>
+
+<div class="section">
+  <div class="d-flex flex-wrap gap-2 mb-4 justify-content-center">
+    <a href="{{ url_for('customer.index') }}"
+       class="btn btn-sm {{ 'btn-dark' if not current_category else 'btn-outline-dark' }}">All</a>
+    {% for c in categories %}
+      <a href="{{ url_for('customer.index', category=c.id) }}"
+         class="btn btn-sm {{ 'btn-dark' if current_category == c.id else 'btn-outline-dark' }}">{{ c.name }}</a>
+    {% endfor %}
+  </div>
+
+  {% if products %}
+    <div class="grid">
+      {% for p in products %}
+        {% include 'partials/_product_card.html' %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      <i class="bi bi-inbox"></i>
+      <p>No products found.</p>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

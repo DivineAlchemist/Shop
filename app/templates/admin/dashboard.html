@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card p-3"><small class="text-muted">Users</small><h3>{{ total_users }}</h3></div></div>
+  <div class="col-md-3"><div class="card p-3"><small class="text-muted">Products</small><h3>{{ total_products }}</h3></div></div>
+  <div class="col-md-3"><div class="card p-3"><small class="text-muted">Orders</small><h3>{{ total_orders }}</h3></div></div>
+  <div class="col-md-3"><div class="card p-3"><small class="text-muted">Revenue</small><h3>${{ '%.2f'|format(revenue) }}</h3></div></div>
+</div>
+<div class="d-flex gap-2">
+  <a href="{{ url_for('admin.users') }}" class="btn btn-primary">Manage Users</a>
+  <a href="/admin-panel" class="btn btn-outline-primary">Full DB Admin Panel</a>
+</div>
+{% endblock %}

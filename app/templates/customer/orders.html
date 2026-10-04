@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}My orders · Raven{% endblock %}
+
+{% block content %}
+<div class="section py-5">
+  <h1 class="h3 mb-4">My orders</h1>
+
+  {% if orders %}
+    <div class="table-card">
+      <table class="table align-middle mb-0">
+        <thead><tr><th>#</th><th>Date</th><th>Status</th><th>Total</th><th></th></tr></thead>
+        <tbody>
+          {% for o in orders %}
+            <tr>
+              <td>#{{ o.id }}</td>
+              <td>{{ o.created_at.strftime('%b %d, %Y') }}</td>
+              <td>
+                {% set colors = {'pending':'warning','processing':'info','shipped':'primary','delivered':'success','cancelled':'danger'} %}
+                <span class="badge text-bg-{{ colors.get(o.status, 'secondary') }}">{{ o.status }}</span>
+              </td>
+              <td><strong>${{ '%.2f'|format(o.total_amount) }}</strong></td>
+              <td class="text-end">
+                <a href="{{ url_for('customer.order_detail', order_id=o.id) }}" class="btn btn-sm btn-outline-dark">View</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">
+      <i class="bi bi-receipt"></i>
+      <p>You haven't placed any orders yet.</p>
+      <a href="{{ url_for('customer.index') }}" class="btn btn-dark mt-3">Start shopping</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "panel/_base.html" %}
+{% block title %}Categories · Panel{% endblock %}
+{% block panel_title %}Categories{% endblock %}
+{% block panel_actions %}
+  <a href="{{ url_for('staff.category_new') }}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i>New category</a>
+{% endblock %}
+
+{% block panel_content %}
+<div class="table-card">
+  <table class="table mb-0 align-middle">
+    <thead><tr><th style="width:64px;"></th><th>Name</th><th>Slug</th><th>Products</th><th>Visible</th><th></th></tr></thead>
+    <tbody>
+      {% for c in categories %}
+        <tr>
+          <td>
+            <img src="{{ c.image_url or 'https://picsum.photos/seed/cat' ~ c.id ~ '/60/60' }}"
+                 style="width:44px;height:44px;object-fit:cover;border-radius:8px;" alt="">
+          </td>
+          <td>{{ c.name }}</td>
+          <td><code>{{ c.slug }}</code></td>
+          <td>{{ c.products|length }}</td>
+          <td>
+            {% if c.visible %}<i class="bi bi-eye-fill text-success"></i>
+            {% else %}<i class="bi bi-eye-slash-fill text-muted"></i>{% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('staff.category_edit', category_id=c.id) }}" class="btn btn-sm btn-outline-dark">Edit</a>
+            <form method="post" action="{{ url_for('staff.category_delete', category_id=c.id) }}" class="d-inline"
+                  onsubmit="return confirm('Delete this category?');">
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="text-muted text-center py-4">No categories yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

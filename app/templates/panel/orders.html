@@ -1,0 +1,34 @@
+{% extends "panel/_base.html" %}
+{% block title %}Orders · Panel{% endblock %}
+{% block panel_title %}Orders{% endblock %}
+
+{% block panel_content %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+  {% for s in ['', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'] %}
+    <a href="{{ url_for('staff.orders', status=s) if s else url_for('staff.orders') }}"
+       class="btn btn-sm {{ 'btn-dark' if current_status == s or (not current_status and not s) else 'btn-outline-dark' }}">
+      {{ s|capitalize or 'All' }}
+    </a>
+  {% endfor %}
+</div>
+
+<div class="table-card">
+  <table class="table mb-0 align-middle">
+    <thead><tr><th>#</th><th>Customer</th><th>Status</th><th>Total</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+      {% for o in orders %}
+        <tr>
+          <td>#{{ o.id }}</td>
+          <td>{{ o.user.name }} <small class="text-muted">{{ o.user.phone }}</small></td>
+          <td><span class="badge text-bg-secondary">{{ o.status }}</span></td>
+          <td>${{ '%.2f'|format(o.total_amount) }}</td>
+          <td>{{ o.created_at.strftime('%b %d, %H:%M') }}</td>
+          <td class="text-end"><a href="{{ url_for('staff.order_detail', order_id=o.id) }}" class="btn btn-sm btn-outline-dark">Manage</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="text-muted text-center py-4">No orders.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
