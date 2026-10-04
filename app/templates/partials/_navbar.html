@@ -44,6 +44,12 @@
             {% endif %}
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+            <li class="mt-3 border-top pt-3">
+  <button id="themeToggle" class="d-flex align-items-center gap-2 w-100 py-2 px-3 rounded border-0 bg-transparent text-start">
+    <i class="bi bi-moon-stars"></i>
+    <span class="theme-label">Dark mode</span>
+  </button>
+</li>
           </ul>
         </div>
       {% else %}

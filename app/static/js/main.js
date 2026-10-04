@@ -17,4 +17,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Focus search input when panel opens
   panel?.addEventListener('shown.bs.collapse', () => input?.focus());
+
+  const toggle = document.getElementById('themeToggle');
+const root = document.documentElement;
+const label = toggle?.querySelector('.theme-label');
+const icon = toggle?.querySelector('i');
+
+function applyTheme(theme) {
+  root.setAttribute('data-bs-theme', theme);
+  localStorage.setItem('theme', theme);
+  if (label) label.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+  if (icon) icon.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+}
+
+// Set initial label/icon on load
+applyTheme(root.getAttribute('data-bs-theme') || 'light');
+
+toggle?.addEventListener('click', () => {
+  const next = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+});
 });

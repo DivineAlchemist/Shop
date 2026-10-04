@@ -3,13 +3,13 @@
 
 {% block content %}
 
-{# ---------- Hero / featured slider (from latest products) ---------- #}
+{# ---------- Hero / featured slider ---------- #}
 {% if latest_products %}
 <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
   <div class="carousel-inner">
     {% for p in latest_products %}
       <div class="carousel-item {% if loop.first %}active{% endif %}">
-        <div style="position:relative; height: 480px; overflow:hidden;">
+        <div style="position:relative; height:480px; overflow:hidden;">
           <img src="{{ p.image_url or 'https://picsum.photos/seed/' ~ p.id ~ '/1600/600' }}"
                class="w-100 h-100" style="object-fit:cover;" alt="{{ p.name }}">
           <div style="position:absolute; inset:0; background:linear-gradient(to right, rgba(0,0,0,.55), transparent);"></div>
@@ -33,11 +33,11 @@
 </div>
 {% endif %}
 
-{# ---------- Popular / new arrivals ---------- #}
+{# ---------- New arrivals ---------- #}
 {% if latest_products %}
 <div class="section--center"><span class="pill-title">New arrivals</span></div>
 <div class="section">
-  <div class="scroller">
+  <div class="grid grid--center">
     {% for p in latest_products %}
       {% include 'partials/_product_card.html' %}
     {% endfor %}
@@ -49,7 +49,7 @@
 {% if categories %}
 <div class="section--center"><span class="pill-title">Shop by category</span></div>
 <div class="section">
-  <div class="grid">
+  <div class="grid grid--center">
     {% for c in categories %}
       <a class="cat-tile" href="{{ url_for('customer.index', category=c.id) }}">
         <img src="{{ c.image_url or 'https://picsum.photos/seed/cat' ~ c.id ~ '/400/400' }}" alt="{{ c.name }}">
@@ -59,34 +59,5 @@
   </div>
 </div>
 {% endif %}
-
-{# ---------- All products ---------- #}
-<div class="section--center"><span class="pill-title">
-  {% if search %}Results for "{{ search }}"{% elif current_category %}Category{% else %}All products{% endif %}
-</span></div>
-
-<div class="section">
-  <div class="d-flex flex-wrap gap-2 mb-4 justify-content-center">
-    <a href="{{ url_for('customer.index') }}"
-       class="btn btn-sm {{ 'btn-dark' if not current_category else 'btn-outline-dark' }}">All</a>
-    {% for c in categories %}
-      <a href="{{ url_for('customer.index', category=c.id) }}"
-         class="btn btn-sm {{ 'btn-dark' if current_category == c.id else 'btn-outline-dark' }}">{{ c.name }}</a>
-    {% endfor %}
-  </div>
-
-  {% if products %}
-    <div class="grid">
-      {% for p in products %}
-        {% include 'partials/_product_card.html' %}
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="empty">
-      <i class="bi bi-inbox"></i>
-      <p>No products found.</p>
-    </div>
-  {% endif %}
-</div>
 
 {% endblock %}

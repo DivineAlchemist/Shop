@@ -36,7 +36,7 @@ def dashboard():
 @admin_required
 def users():
     all_users = User.query.order_by(User.created_at.desc()).all()
-    return render_template('admin/users.html', users=all_users)
+    return render_template('panel/users.html', users=all_users)
 
 
 @admin_bp.route('/users/<int:user_id>/role', methods=['POST'])

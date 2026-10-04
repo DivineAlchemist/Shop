@@ -4,6 +4,7 @@ from ..models import Product, Category, Order
 from ..extensions import db
 from ..decorators import staff_required
 from ..utils import slugify
+from sqlalchemy import func
 
 staff_bp = Blueprint('staff', __name__)
 
