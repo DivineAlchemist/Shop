@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""One-command launcher.   ./run dev | test | prod | migrate | seed     (Windows: python run dev)
+
+dev     development config, local SQLite (shop-dev.db), MOCK sms/payments, migrations applied, demo data on first run
+test    isolated in-memory DB + mock providers, runs pytest (never sends SMS / starts payments)
+prod    production config + secrets from .env.production / environment, backs up SQLite, applies migrations,
+        starts gunicorn (waitress on Windows). Debug is never enabled, data is never reset or seeded.
+"""
+import os
+import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+os.chdir(ROOT)
+sys.path.insert(0, ROOT)
+LIVE_KEYS = ('KAVENEGAR_API_KEY', 'KAVENEGAR_SENDER', 'ZARINPAL_MERCHANT_ID', 'SMS_PROVIDER', 'PAYMENT_GATEWAY',
+             'DATABASE_URL', 'SITE_URL')
+
+
+REQUIRED_MODULES = ('flask', 'flask_sqlalchemy', 'flask_migrate', 'flask_login', 'flask_bcrypt', 'flask_wtf',
+                    'flask_admin', 'dotenv', 'PIL', 'requests', 'openpyxl')
+
+# slow/unstable connections: longer timeout + retries (set PIP_INDEX_URL to use a mirror)
+PIP_FLAGS = ('-q', '--default-timeout', '120', '--retries', '8')
+
+
+def ensure_environment():
+    """If the current Python lacks the dependencies, create ./.venv, install requirements.txt
+    (re-installed whenever it changes) and re-run this launcher inside it."""
+    import importlib.util
+    if all(importlib.util.find_spec(m) for m in REQUIRED_MODULES) or os.environ.get('SHOP_NO_VENV'):
+        return
+    venv = os.path.join(ROOT, '.venv')
+    py = os.path.join(venv, 'Scripts' if os.name == 'nt' else 'bin', 'python' + ('.exe' if os.name == 'nt' else ''))
+    if os.path.abspath(sys.prefix) == os.path.abspath(venv):
+        die('dependencies are missing even inside .venv; run: pip install -r requirements.txt')
+    if not os.path.exists(py):
+        print('Creating virtual environment in .venv ...')
+        subprocess.check_call([sys.executable, '-m', 'venv', venv])
+    req = os.path.join(ROOT, 'requirements.txt')
+    stamp = os.path.join(venv, '.requirements.stamp')
+    current = str(os.path.getmtime(req)) + str(os.path.getsize(req))
+    if not os.path.exists(stamp) or open(stamp).read() != current:
+        print('Installing dependencies (first run takes a minute) ...')
+        subprocess.check_call([py, '-m', 'pip', 'install', *PIP_FLAGS, '-r', req])
+        open(stamp, 'w').write(current)
+    sys.exit(subprocess.call([py, os.path.abspath(__file__), *sys.argv[1:]]))
+
+
+def die(msg, code=1):
+    print(f'error: {msg}', file=sys.stderr)
+    sys.exit(code)
+
+
+def migrate(app):
+    """Apply migrations. Databases created before Flask-Migrate existed are stamped at the baseline
+    first, so existing data is upgraded in place (never recreated)."""
+    from sqlalchemy import inspect
+    from flask_migrate import upgrade, stamp
+    from app.extensions import db
+    with app.app_context():
+        tables = set(inspect(db.engine).get_table_names())
+        if 'users' in tables and 'alembic_version' not in tables:
+            print('Existing unversioned database detected: stamping baseline, then upgrading.')
+            stamp(revision='0001_baseline')
+        upgrade()
+
+
+def wait_for_db(app, attempts=20):
+    from sqlalchemy import text
+    from app.extensions import db
+    for i in range(attempts):
+        try:
+            with app.app_context():
+                db.session.execute(text('SELECT 1'))
+            return
+        except Exception as e:  # database container/service still starting
+            print(f'waiting for database ({i + 1}/{attempts}): {type(e).__name__}')
+            time.sleep(min(2 + i, 10))
+    die('database is not reachable')
+
+
+def backup_sqlite(app):
+    uri = app.config['SQLALCHEMY_DATABASE_URI']
+    if not uri.startswith('sqlite:///') or ':memory:' in uri:
+        return
+    path = uri.replace('sqlite:///', '', 1)
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        os.makedirs(os.path.join(ROOT, 'backups'), exist_ok=True)
+        dest = os.path.join(ROOT, 'backups', f'{os.path.basename(path)}.{datetime.now():%Y%m%d-%H%M%S}.bak')
+        shutil.copy2(path, dest)
+        print(f'SQLite backup written to {dest}')
+
+
+def cmd_dev(args):
+    os.environ['APP_ENV'] = 'development'
+    from app import create_app
+    app = create_app()
+    migrate(app)
+    from app.models import User
+    with app.app_context():
+        empty = User.query.count() == 0
+    if empty:
+        subprocess.check_call([sys.executable, '-m', 'flask', '--app', 'run', 'seed'])
+    host, port = '127.0.0.1', os.environ.get('PORT', '5000')
+    print(f'Development server on http://{host}:{port}  (mock SMS/payments - nothing live is contacted)')
+    os.execv(sys.executable, [sys.executable, '-m', 'flask', '--app', 'run', 'run', '--debug', '-h', host, '-p', port])
+
+
+def cmd_test(args):
+    import importlib.util
+    if importlib.util.find_spec('pytest') is None:  # test-only dependency, installed on demand
+        if sys.prefix == sys.base_prefix:
+            die('pytest is missing: run  pip install -r requirements-dev.txt  (inside your virtualenv)')
+        print('Installing test dependency (pytest) ...')
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', *PIP_FLAGS, '-r',
+                               os.path.join(ROOT, 'requirements-dev.txt')])
+    env = {k: v for k, v in os.environ.items() if k not in LIVE_KEYS and not k.startswith('ZARINPAL')}
+    env['APP_ENV'] = 'testing'
+    sys.exit(subprocess.call([sys.executable, '-m', 'pytest', 'tests', '-q', *args], env=env))
+
+
+def cmd_prod(args):
+    os.environ['APP_ENV'] = 'production'
+    os.environ.pop('FLASK_DEBUG', None)
+    from app import create_app
+    try:
+        app = create_app()  # validates secrets/providers and refuses unsafe configuration
+    except RuntimeError as e:
+        die(str(e))
+    wait_for_db(app)
+    backup_sqlite(app)
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    migrate(app)
+    host, port = os.environ.get('HOST', '0.0.0.0'), os.environ.get('PORT', '8000')
+    workers = os.environ.get('WEB_CONCURRENCY', '3')
+    if os.name == 'nt':
+        cmd = [sys.executable, '-m', 'waitress', f'--listen={host}:{port}', 'run:app']
+    else:
+        cmd = [sys.executable, '-m', 'gunicorn', '-w', workers, '-b', f'{host}:{port}', '--access-logfile', '-', 'run:app']
+    print('Starting production server:', ' '.join(cmd))
+    os.execv(sys.executable, cmd)
+
+
+def cmd_migrate(args):
+    os.environ.setdefault('APP_ENV', 'development')
+    from app import create_app
+    app = create_app()
+    backup_sqlite(app)
+    migrate(app)
+    print('Migrations applied.')
+
+
+def cmd_seed(args):
+    os.environ.setdefault('APP_ENV', 'development')
+    if os.environ['APP_ENV'] == 'production':
+        die('seeding demo data is disabled in production')
+    sys.exit(subprocess.call([sys.executable, '-m', 'flask', '--app', 'run', 'seed']))
+
+
+COMMANDS = {'dev': cmd_dev, 'test': cmd_test, 'prod': cmd_prod, 'migrate': cmd_migrate, 'seed': cmd_seed}
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
+        print(__doc__)
+        sys.exit(2)
+    ensure_environment()
+    COMMANDS[sys.argv[1]](sys.argv[2:])
