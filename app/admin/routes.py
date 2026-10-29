@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from sqlalchemy import func
-from ..models import User, Product, Category, Order, OrderItem
+from ..models import User, Product, Category, Order, OrderItem, Tag, Banner, HomepageSection, Coupon, StoreSettings
 from ..extensions import db
 from ..decorators import admin_required
 
@@ -20,7 +20,7 @@ def dashboard():
     pending_orders = Order.query.filter_by(status='pending').count()
     revenue = db.session.query(
         func.coalesce(func.sum(Order.total_amount), 0)
-    ).filter(Order.status != 'cancelled').scalar()
+    ).filter(Order.status.notin_(('cancelled', 'failed'))).scalar()
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(5).all()
     return render_template('panel/dashboard.html',
                            total_users=total_users,
@@ -76,7 +76,7 @@ class SecureIndexView(AdminIndexView):
 
 class UserAdminView(SecureModelView):
     column_exclude_list = ['password_hash']
-    form_excluded_columns = ['password_hash', 'cart_items', 'orders']
+    form_excluded_columns = ['password_hash', 'cart_items', 'orders', 'addresses', 'failed_logins']
     column_searchable_list = ['phone', 'name']
     can_create = False
     can_delete = True
@@ -84,6 +84,12 @@ class UserAdminView(SecureModelView):
 
 class OrderAdminView(SecureModelView):
     column_default_sort = ('created_at', True)
+    can_create = can_edit = can_delete = False  # orders change only through the audited workflow
+
+
+class ReadOnlyView(SecureModelView):
+    """Catalog/order data has invariants (paths, stock, snapshots) that only the staff panel maintains."""
+    can_create = can_edit = can_delete = False
 
 
 def init_admin(app):
@@ -92,11 +98,15 @@ def init_admin(app):
         name='Shop Admin',
         url='/admin-panel',
         endpoint='flaskadmin',          # <-- unique endpoint for Flask-Admin's index
-        index_view=SecureIndexView(endpoint='flaskadmin'),  # <-- match it here too
+        index_view=SecureIndexView(url='/admin-panel', endpoint='flaskadmin'),  # <-- match it here too
         template_mode='bootstrap4'
     )
     admin.add_view(UserAdminView(User, db.session, category='Users', endpoint='admin_users'))
-    admin.add_view(SecureModelView(Category, db.session, category='Catalog', endpoint='admin_categories'))
-    admin.add_view(SecureModelView(Product, db.session, category='Catalog', endpoint='admin_products'))
+    admin.add_view(ReadOnlyView(Category, db.session, category='Catalog', endpoint='admin_categories'))
+    admin.add_view(ReadOnlyView(Product, db.session, category='Catalog', endpoint='admin_products'))
+    admin.add_view(SecureModelView(Tag, db.session, category='Catalog', endpoint='admin_tags'))
+    admin.add_view(SecureModelView(Banner, db.session, category='Storefront', endpoint='admin_banners'))
+    admin.add_view(SecureModelView(HomepageSection, db.session, category='Storefront', endpoint='admin_sections'))
+    admin.add_view(SecureModelView(Coupon, db.session, category='Sales', endpoint='admin_coupons'))
     admin.add_view(OrderAdminView(Order, db.session, category='Sales', endpoint='admin_orders'))
-    admin.add_view(SecureModelView(OrderItem, db.session, category='Sales', endpoint='admin_orderitems'))
+    admin.add_view(ReadOnlyView(OrderItem, db.session, category='Sales', endpoint='admin_orderitems'))

@@ -2,42 +2,44 @@
 {% block title %}Products · Panel{% endblock %}
 {% block panel_title %}Products{% endblock %}
 {% block panel_actions %}
-  <a href="{{ url_for('staff.product_new') }}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i>New product</a>
+  <a href="{{ url_for('staff.import_products') }}" class="btn btn-outline-dark"><i class="bi bi-file-earmark-spreadsheet me-1"></i>{{ _('Import') }}</a>
+  <a href="{{ url_for('staff.product_new') }}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i>{{ _('New product') }}</a>
 {% endblock %}
-
 {% block panel_content %}
+<form method="get" class="row g-2 mb-3">
+  <div class="col-12 col-md"><input name="q" class="form-control" placeholder="{{ _('Search name, SKU, brand') }}" value="{{ term }}"></div>
+  <div class="col-6 col-md-2"><select name="status" class="form-select"><option value="">{{ _('Any status') }}</option>{% for s in ['published','draft','archived'] %}<option value="{{ s }}" {{ 'selected' if status == s }}>{{ s|capitalize }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-3"><select name="category" class="form-select"><option value="">{{ _('All categories') }}</option>{% for c, d in categories %}<option value="{{ c.id }}" {{ 'selected' if cat_id == c.id }}>{{ '\u2003' * d }}{{ c.name }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><select name="sort" class="form-select">{% for k, l in [('newest','Newest'),('name','Name'),('price_asc','Price ↑'),('price_desc','Price ↓')] %}<option value="{{ k }}" {{ 'selected' if sort == k }}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-auto"><button class="btn btn-dark w-100">{{ _('Filter') }}</button></div>
+</form>
 <div class="table-card">
-  <table class="table mb-0 align-middle">
-    <thead>
-      <tr><th style="width:64px;"></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Active</th><th></th></tr>
-    </thead>
+  <table class="table mb-0 align-middle table-stack">
+    <thead><tr><th style="width:64px;"></th><th>{{ _('Name') }}</th><th>{{ _('SKU') }}</th><th>{{ _('Category') }}</th><th>{{ _('Price') }}</th><th>{{ _('Stock') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
     <tbody>
       {% for p in products %}
         <tr>
-          <td>
-            <img src="{{ p.image_url or 'https://picsum.photos/seed/' ~ p.id ~ '/60/60' }}"
-                 style="width:44px;height:44px;object-fit:cover;border-radius:8px;" alt="">
-          </td>
-          <td>{{ p.name }}</td>
-          <td>{{ p.category.name if p.category else '—' }}</td>
-          <td>${{ '%.2f'|format(p.price) }}</td>
-          <td>{{ p.stock }}</td>
-          <td>
-            {% if p.is_active %}<i class="bi bi-check-circle-fill text-success"></i>
-            {% else %}<i class="bi bi-x-circle-fill text-muted"></i>{% endif %}
-          </td>
-          <td class="text-end">
-            <a href="{{ url_for('staff.product_edit', product_id=p.id) }}" class="btn btn-sm btn-outline-dark">Edit</a>
-            <form method="post" action="{{ url_for('staff.product_delete', product_id=p.id) }}" class="d-inline"
-                  onsubmit="return confirm('Delete this product?');">
-              <button class="btn btn-sm btn-outline-danger">Delete</button>
+          <td><img src="{{ p.image_url or 'https://picsum.photos/seed/' ~ p.id ~ '/60/60' }}" class="thumb" alt=""></td>
+          <td data-label="Name">{{ p.name }}</td>
+          <td data-label="SKU">{{ p.sku or '—' }}</td>
+          <td data-label="Category">{{ p.category.name if p.category else '—' }}</td>
+          <td data-label="Price">{{ (p.min_price if p.min_price is not none else p.price)|money }}</td>
+          <td data-label="Stock">{{ p.stock }}{% if p.options %} <small class="text-muted">({{ p.active_variants|length }} variants)</small>{% endif %}</td>
+          <td data-label="Status"><span class="badge text-bg-{{ {'published':'success','draft':'secondary','archived':'dark'}[p.status] }}">{{ p.status }}</span></td>
+          <td class="text-end text-nowrap">
+            <a href="{{ url_for('staff.product_edit', product_id=p.id) }}" class="btn btn-sm btn-outline-dark">{{ _('Edit') }}</a>
+            <form method="post" action="{{ url_for('staff.product_status', product_id=p.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% if p.status == 'published' %}<button name="status" value="archived" class="btn btn-sm btn-outline-secondary">{{ _('Archive') }}</button>
+              {% else %}<button name="status" value="published" class="btn btn-sm btn-outline-success">{{ _('Publish') }}</button>{% endif %}
             </form>
+            <form method="post" action="{{ url_for('staff.product_delete', product_id=p.id) }}" class="d-inline" onsubmit="return confirm('Delete this product? Products with orders are archived instead.');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">{{ _('Delete') }}</button></form>
           </td>
         </tr>
-      {% else %}
-        <tr><td colspan="7" class="text-muted text-center py-4">No products yet.</td></tr>
-      {% endfor %}
+      {% else %}<tr><td colspan="8" class="text-muted text-center py-4">{{ _('No products found.') }}</td></tr>{% endfor %}
     </tbody>
   </table>
 </div>
+{% include 'partials/_pagination.html' %}
 {% endblock %}

@@ -1,0 +1,37 @@
+{% extends "panel/_base.html" %}
+{% block title %}{{ title }} · Panel{% endblock %}
+{% block panel_title %}{{ title }}{% endblock %}
+{% block panel_content %}
+<form method="post" enctype="multipart/form-data" class="card p-3 p-md-4 panel-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if note %}<div class="alert alert-info small">{{ note }}</div>{% endif %}
+  <div class="row g-3">
+    {% for f in fields %}
+      <div class="col-12 {{ 'col-md-' ~ f.cols if f.cols }}">
+        {% if f.type == 'checkbox' %}
+          <div class="form-check mt-md-4"><input type="checkbox" class="form-check-input" id="f_{{ f.name }}" name="{{ f.name }}" {{ 'checked' if f.value }}>
+            <label class="form-check-label" for="f_{{ f.name }}">{{ f.label }}</label></div>
+        {% else %}
+          <label class="form-label" for="f_{{ f.name }}">{{ f.label }}</label>
+          {% if f.type == 'textarea' %}
+            <textarea class="form-control" id="f_{{ f.name }}" name="{{ f.name }}" rows="3">{{ f.value }}</textarea>
+          {% elif f.type == 'select' %}
+            <select class="form-select" id="f_{{ f.name }}" name="{{ f.name }}">
+              {% for val, label in f.options %}<option value="{{ val }}" {{ 'selected' if val|string == f.value|string }}>{{ label }}</option>{% endfor %}
+            </select>
+          {% elif f.type == 'image' %}
+            {% if f.value %}<img src="{{ f.value }}" alt="" class="mb-2 d-block" style="max-height:80px;max-width:100%;border-radius:8px">{% endif %}
+            <input class="form-control mb-1" id="f_{{ f.name }}" name="{{ f.name }}" value="{{ f.value }}" placeholder="{{ _('https://… or leave to keep current') }}">
+            <input type="file" class="form-control" name="{{ f.name }}_file" accept="image/png,image/jpeg,image/gif,image/webp,.ico">
+          {% else %}
+            <input class="form-control" type="{{ f.type }}" id="f_{{ f.name }}" name="{{ f.name }}" value="{{ f.value }}"
+                   {{ 'required' if f.required }} {% if f.min is defined %}min="{{ f.min }}"{% endif %} {% if f.max is defined %}max="{{ f.max }}"{% endif %} {% if f.step is defined %}step="{{ f.step }}"{% endif %}>
+          {% endif %}
+          {% if f.help %}<div class="form-text">{{ f.help }}</div>{% endif %}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="d-flex gap-2 mt-4"><button class="btn btn-dark">{{ _('Save') }}</button><a href="{{ cancel_url }}" class="btn btn-outline-dark">{{ _('Cancel') }}</a></div>
+</form>
+{% endblock %}

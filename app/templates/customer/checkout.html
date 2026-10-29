@@ -1,35 +1,80 @@
 {% extends "base.html" %}
-{% block title %}Checkout · Raven{% endblock %}
+{% block title %}{{ _('Checkout') }} · {{ store.store_name if store else 'Raven' }}{% endblock %}
 
 {% block content %}
-<div class="section py-5" style="max-width: 800px;">
-  <h1 class="h3 mb-4">Checkout</h1>
+<div class="section py-4 py-md-5" style="max-width: 980px;">
+  <h1 class="h3 mb-4">{{ _('Checkout') }}</h1>
+  {% for e in quote.errors %}<div class="alert alert-warning">{{ e }}</div>{% endfor %}
+  <form method="post" class="row g-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-lg-7">
+      <div class="card p-3 p-md-4 mb-3">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Shipping address') }}</h2>
+        {% if addresses %}
+          {% for a in addresses %}
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="radio" name="address_id" id="addr{{ a.id }}" value="{{ a.id }}" {{ 'checked' if a.is_default or loop.first and not addresses|selectattr('is_default')|list }}>
+              <label class="form-check-label" for="addr{{ a.id }}"><strong>{{ a.recipient_name }}</strong> · {{ a.phone }}<br><small class="text-muted">{{ a.as_text() }}</small></label>
+            </div>
+          {% endfor %}
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="radio" name="address_id" id="addrNew" value="">
+            <label class="form-check-label" for="addrNew">{{ _('Use a new address') }}</label>
+          </div>
+        {% endif %}
+        <div id="newAddress" class="row g-2">
+          <div class="col-md-6"><input name="recipient_name" class="form-control" placeholder="{{ _('Recipient name') }}" value="{{ request.form.get('recipient_name', '') }}"></div>
+          <div class="col-md-6"><input name="phone" class="form-control" placeholder="{{ _('Phone') }}" value="{{ request.form.get('phone', '') }}"></div>
+          <div class="col-md-6"><input name="city" class="form-control" placeholder="{{ _('City') }}" value="{{ request.form.get('city', '') }}"></div>
+          <div class="col-md-6"><input name="postal_code" class="form-control" placeholder="{{ _('Postal code') }}" value="{{ request.form.get('postal_code', '') }}"></div>
+          <div class="col-12"><textarea name="address_line" class="form-control" rows="2" placeholder="{{ _('Street, building, unit…') }}">{{ request.form.get('address_line', request.form.get('address', '')) }}</textarea></div>
+          <div class="col-12 form-check ms-2"><input type="checkbox" class="form-check-input" name="save_address" id="saveAddr"><label class="form-check-label" for="saveAddr">{{ _('Save this address') }}</label></div>
+        </div>
+      </div>
 
-  <form method="post" class="card p-4">
-    <h2 class="h6 text-muted text-uppercase mb-3">Shipping address</h2>
-    <textarea name="address" class="form-control mb-4" rows="3" required
-              placeholder="Street, city, postal code...">{{ request.form.get('address', '') }}</textarea>
+      <div class="card p-3 p-md-4 mb-3">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Shipping method') }}</h2>
+        {% for m in methods %}
+          <div class="form-check mb-1">
+            <input class="form-check-input" type="radio" name="shipping_method" id="sm{{ m.id }}" value="{{ m.code }}" {{ 'checked' if m.code == selected_shipping }} onchange="document.getElementById('quoteBtn').click()">
+            <label class="form-check-label" for="sm{{ m.id }}">{{ m.name }} — {{ m.price|money }}{% if m.free_over %} <small class="text-muted">(free over {{ m.free_over|money }})</small>{% endif %}</label>
+          </div>
+        {% endfor %}
+      </div>
 
-    <h2 class="h6 text-muted text-uppercase mb-3">Order summary</h2>
-    <ul class="list-unstyled mb-4">
-      {% for item in items %}
-        <li class="d-flex justify-content-between py-2 border-bottom">
-          <span>{{ item.product.name }} × {{ item.quantity }}</span>
-          <strong>${{ '%.2f'|format(item.product.price * item.quantity) }}</strong>
-        </li>
-      {% endfor %}
-    </ul>
-
-    <div class="d-flex justify-content-between mb-4">
-      <strong>Total</strong>
-      <strong>
-        ${% set ns = namespace(total=0) %}
-        {% for item in items %}{% set ns.total = ns.total + item.product.price * item.quantity %}{% endfor %}
-        {{ '%.2f'|format(ns.total) }}
-      </strong>
+      <div class="card p-3 p-md-4">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Payment') }}</h2>
+        {% if 'online' in payment_methods %}
+        <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" id="payOnline" value="online" {{ 'checked' if selected_method == 'online' }}><label class="form-check-label" for="payOnline">{{ _('Pay online') }}</label></div>
+        {% endif %}
+        <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" id="payCod" value="cod" {{ 'checked' if selected_method != 'online' or 'online' not in payment_methods }}><label class="form-check-label" for="payCod">{{ _('Pay on delivery') }}</label></div>
+      </div>
     </div>
 
-    <button class="btn btn-dark w-100 py-3">Place order</button>
+    <div class="col-lg-5">
+      <div class="card p-3 p-md-4 summary">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Order summary') }}</h2>
+        <ul class="list-unstyled mb-3">
+          {% for l in quote.lines %}
+            <li class="d-flex justify-content-between gap-2 py-2 border-bottom">
+              <span>{{ l.product.name }}{% if l.variant and l.variant.label %} <small class="text-muted">({{ l.variant.label }})</small>{% endif %} × {{ l.qty }}</span>
+              <strong>{{ l.line_total|money }}</strong>
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="input-group mb-2">
+          <input name="coupon" class="form-control" placeholder="{{ _('Coupon code') }}" value="{{ coupon_code }}">
+          <button class="btn btn-outline-dark" name="action" value="quote" id="quoteBtn" formnovalidate>{{ _('Apply') }}</button>
+        </div>
+        {% if coupon_code and quote.coupon_error %}<div class="text-danger small mb-2">{{ quote.coupon_error }}</div>{% endif %}
+        <div class="d-flex justify-content-between"><span>{{ _('Subtotal') }}</span><span>{{ quote.subtotal|money }}</span></div>
+        {% if quote.discount %}<div class="d-flex justify-content-between text-success"><span>{{ _('Discount') }}</span><span>−{{ quote.discount|money }}</span></div>{% endif %}
+        <div class="d-flex justify-content-between"><span>{{ _('Shipping') }}</span><span>{{ quote.shipping|money }}</span></div>
+        <hr>
+        <div class="d-flex justify-content-between h5"><span>{{ _('Total') }}</span><strong>{{ quote.total|money }}</strong></div>
+        <button class="btn btn-dark w-100 py-3 mt-2" {{ 'disabled' if quote.errors }}>{{ _('Place order') }}</button>
+      </div>
+    </div>
   </form>
 </div>
 {% endblock %}

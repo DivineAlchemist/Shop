@@ -1,48 +1,62 @@
 {% extends "panel/_base.html" %}
 {% block title %}Order #{{ order.id }} · Panel{% endblock %}
 {% block panel_title %}Order #{{ order.id }}{% endblock %}
-
 {% block panel_content %}
 <div class="row g-4">
   <div class="col-lg-8">
-    <div class="card p-4">
-      <h2 class="h6 text-muted text-uppercase mb-3">Items</h2>
+    <div class="card p-3 p-md-4 mb-4">
+      <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Items') }} <small class="text-lowercase">{{ _('(purchase-time snapshot)') }}</small></h2>
       <ul class="list-unstyled mb-0">
         {% for item in order.items %}
-          <li class="d-flex justify-content-between py-2 border-bottom">
-            <div>
-              <div class="fw-semibold">{{ item.product.name }}</div>
-              <small class="text-muted">{{ item.quantity }} × ${{ '%.2f'|format(item.price_at_purchase) }}</small>
-            </div>
-            <strong>${{ '%.2f'|format(item.price_at_purchase * item.quantity) }}</strong>
+          <li class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <div><div class="fw-semibold">{{ item.display_name }}</div>
+              {% if item.options_snapshot %}<small class="text-muted d-block">{{ item.options_snapshot.items()|map('join', ': ')|join(' · ') }}</small>{% endif %}
+              <small class="text-muted">SKU {{ item.sku or '—' }} · {{ item.quantity }} × {{ item.unit_price|money }} · stock: {{ item.stock_state }}</small></div>
+            <strong>{{ item.line_total|money }}</strong>
           </li>
         {% endfor %}
       </ul>
-      <div class="d-flex justify-content-between mt-3">
-        <strong>Total</strong><strong>${{ '%.2f'|format(order.total_amount) }}</strong>
+      <div class="ms-auto text-end mt-3" style="max-width:280px">
+        <div class="d-flex justify-content-between"><span>{{ _('Subtotal') }}</span><span>{{ order.subtotal|money }}</span></div>
+        <div class="d-flex justify-content-between"><span>{{ _('Discount') }}</span><span>−{{ order.discount_total|money }}</span></div>
+        <div class="d-flex justify-content-between"><span>{{ _('Shipping') }}</span><span>{{ order.shipping_total|money }}</span></div>
+        <div class="d-flex justify-content-between fw-bold border-top pt-1"><span>{{ _('Total') }}</span><span>{{ order.total_amount|money }}</span></div>
       </div>
     </div>
-  </div>
-
-  <div class="col-lg-4">
-    <div class="card p-4 mb-4">
-      <h2 class="h6 text-muted text-uppercase mb-3">Customer</h2>
-      <div class="fw-semibold">{{ order.user.name }}</div>
-      <div class="text-muted small">{{ order.user.phone }}</div>
-      <hr>
-      <div class="text-muted small">Shipping address</div>
-      <div>{{ order.shipping_address }}</div>
+    <div class="card p-3 p-md-4">
+      <h2 class="h6 text-muted text-uppercase mb-3">{{ _('History') }}</h2>
+      <ol class="timeline mb-0">
+        {% for h in order.history %}<li><strong>{{ h.from_status or '—' }} → {{ h.to_status }}</strong>
+          <small class="text-muted">{{ h.created_at.strftime('%b %d, %H:%M') }}{% if h.changed_by %} · {{ h.changed_by.name }}{% endif %}</small>{% if h.note %}<div class="small">{{ h.note }}</div>{% endif %}</li>{% endfor %}
+      </ol>
     </div>
-
-    <form method="post" class="card p-4">
-      <h2 class="h6 text-muted text-uppercase mb-3">Update status</h2>
-      <select name="status" class="form-select mb-3">
-        {% for s in ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] %}
-          <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
-        {% endfor %}
-      </select>
-      <button class="btn btn-dark w-100">Save</button>
+  </div>
+  <div class="col-lg-4">
+    <div class="card p-3 p-md-4 mb-4">
+      <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Customer') }}</h2>
+      <div class="fw-semibold">{{ order.user.name }}</div><div class="text-muted small">{{ order.user.phone }}</div><hr>
+      <div class="text-muted small">{{ _('Ship to') }}</div><div>{{ order.ship_name }} · {{ order.ship_phone }}<br>{{ order.shipping_address }}</div><hr>
+      <div class="small">{{ _('Payment:') }} <strong>{{ order.payment_method }}</strong> / {{ order.payment_status }}</div>
+      {% for p in order.payments %}<div class="small text-muted">{{ p.gateway }} · {{ p.status }}{% if p.ref_id %} · ref {{ p.ref_id }}{% endif %}</div>{% endfor %}
+      {% if order.tracking_code %}<div class="small mt-1">Shipment: {{ order.shipment_provider }} — {{ order.tracking_code }}</div>{% endif %}
+    </div>
+    {% if order.allowed_next() %}
+    <form method="post" class="card p-3 p-md-4 mb-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="transition">
+      <h2 class="h6 text-muted text-uppercase mb-3">Update status ({{ order.status }})</h2>
+      <select name="status" class="form-select mb-2" id="nextStatus">{% for s in order.allowed_next() %}<option value="{{ s }}">{{ s|capitalize }}</option>{% endfor %}</select>
+      <div id="shipFields" class="mb-2">
+        <input name="provider" class="form-control mb-2" placeholder="{{ _('Shipment provider (for “shipped”)') }}">
+        <input name="tracking" class="form-control" placeholder="{{ _('Tracking code (for “shipped”)') }}">
+      </div>
+      <input name="note" class="form-control mb-3" placeholder="{{ _('Note (optional)') }}">
+      <button class="btn btn-dark w-100">{{ _('Apply') }}</button>
     </form>
+    {% endif %}
+    {% if current_user.is_admin() and order.payment_status == 'paid' and order.status in ('cancelled', 'failed') %}
+    <form method="post" class="card p-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="refund">
+      <button class="btn btn-outline-danger w-100">{{ _('Mark as refunded') }}</button></form>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

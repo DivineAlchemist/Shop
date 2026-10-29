@@ -1,0 +1,27 @@
+{% extends "panel/_base.html" %}
+{% block title %}{{ title }} · Panel{% endblock %}
+{% block panel_title %}{{ title }}{% endblock %}
+{% block panel_actions %}{% for label, url in actions %}<a href="{{ url }}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i>{{ label }}</a>{% endfor %}{% endblock %}
+{% block panel_content %}
+<div class="table-card">
+  <table class="table mb-0 align-middle table-stack">
+    <thead><tr>{% if rows and rows[0].image is defined %}<th style="width:80px"></th>{% endif %}{% for c in columns %}<th>{{ c }}</th>{% endfor %}<th></th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+        <tr>
+          {% if r.image is defined %}<td><img src="{{ r.image }}" alt="" style="width:64px;height:40px;object-fit:cover;border-radius:6px"></td>{% endif %}
+          {% for cell in r.cells %}<td data-label="{{ columns[loop.index0] }}">{{ cell }}</td>{% endfor %}
+          <td class="text-end text-nowrap">
+            {% for label, url, method, confirm in r.actions %}
+              {% if method == 'post' %}
+                <form method="post" action="{{ url }}" class="d-inline" {% if confirm %}onsubmit="return confirm('{{ confirm }}');"{% endif %}>
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">{{ label }}</button></form>
+              {% else %}<a href="{{ url }}" class="btn btn-sm btn-outline-dark">{{ label }}</a>{% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="{{ columns|length + 2 }}" class="text-muted text-center py-4">{{ empty }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

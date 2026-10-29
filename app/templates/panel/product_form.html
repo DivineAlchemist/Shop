@@ -1,55 +1,121 @@
 {% extends "panel/_base.html" %}
+{% set fd = form_data %}
+{% macro val(name, default='') %}{{ fd.get(name) if fd and name in fd else default }}{% endmacro %}
 {% block title %}{{ 'Edit' if product else 'New' }} product · Panel{% endblock %}
 {% block panel_title %}{{ 'Edit' if product else 'New' }} product{% endblock %}
+{% block panel_actions %}{% if product %}<a class="btn btn-outline-dark" target="_blank" href="{{ url_for('customer.product_detail', slug=product.slug, internal=1) }}">{{ _('Preview') }}</a>{% endif %}{% endblock %}
 
 {% block panel_content %}
-<form method="post" class="card p-4" style="max-width:760px;">
-  <div class="row g-3">
-    <div class="col-md-8">
-      <label class="form-label">Name</label>
-      <input name="name" class="form-control" required
-             value="{{ product.name if product else '' }}">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Category</label>
-      <select name="category_id" class="form-select">
-        <option value="">— None —</option>
-        {% for c in categories %}
-          <option value="{{ c.id }}" {% if product and product.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Price</label>
-      <input type="number" step="0.01" min="0" name="price" class="form-control" required
-             value="{{ product.price if product else '' }}">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Stock</label>
-      <input type="number" min="0" name="stock" class="form-control"
-             value="{{ product.stock if product else 0 }}">
-    </div>
-    <div class="col-md-4 d-flex align-items-end">
-      <div class="form-check">
-        <input type="checkbox" class="form-check-input" name="is_active" id="is_active"
-               {% if not product or product.is_active %}checked{% endif %}>
-        <label class="form-check-label" for="is_active">Active</label>
+<form method="post" enctype="multipart/form-data" class="panel-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-4">
+    <div class="col-xl-8">
+      <div class="card p-3 p-md-4 mb-4">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Basics') }}</h2>
+        <div class="row g-3">
+          <div class="col-md-8"><label class="form-label">{{ _('Name') }}</label><input name="name" class="form-control" required value="{{ val('name', product.name if product else '') }}"></div>
+          <div class="col-md-4"><label class="form-label">{{ _('Status') }}</label>
+            <select name="status" class="form-select">{% for s in ['published','draft','archived'] %}<option value="{{ s }}" {{ 'selected' if val('status', product.status if product else 'published') == s }}>{{ s|capitalize }}</option>{% endfor %}</select></div>
+          <div class="col-md-4"><label class="form-label">{{ _('SKU') }}</label><input name="sku" class="form-control" value="{{ val('sku', product.sku if product and product.sku else '') }}"></div>
+          <div class="col-md-4"><label class="form-label">{{ _('Brand') }}</label><input name="brand" class="form-control" value="{{ val('brand', product.brand if product else '') }}"></div>
+          <div class="col-md-2"><label class="form-label">{{ _('Price') }}</label><input type="number" step="0.01" min="0" name="price" class="form-control" required value="{{ val('price', product.price if product else '') }}"></div>
+          <div class="col-md-2"><label class="form-label">{{ _('Sale price') }}</label><input type="number" step="0.01" min="0" name="sale_price" class="form-control" value="{{ val('sale_price', product.sale_price if product and product.sale_price is not none else '') }}"></div>
+          <div class="col-12"><label class="form-label">{{ _('Description') }}</label><textarea name="description" rows="4" class="form-control">{{ val('description', product.description if product else '') }}</textarea></div>
+        </div>
+      </div>
+
+      <div class="card p-3 p-md-4 mb-4">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Options &amp; variants') }}</h2>
+        <label class="form-label">{{ _('Options') }} <small class="text-muted">{{ _('one per line:') }} <code>{{ _('Color: Blue, Black') }}</code> {{ _('— leave empty for a simple product') }}</small></label>
+        <textarea name="options" rows="3" class="form-control mb-3" placeholder="{{ _('Color: Blue, Black&#10;Size: M, L') }}">{{ val('options', options_text) }}</textarea>
+        {% if not product or not product.options %}
+          <label class="form-label">{{ _('Stock') }}</label>
+          <input type="number" min="0" name="stock" class="form-control" style="max-width:160px" value="{{ val('stock', product.stock if product else 0) }}">
+          <div class="form-text">{{ _('With options, every combination becomes its own variant (save once, then edit each variant\'s stock/SKU/price below).') }}</div>
+        {% else %}
+          <div class="table-card"><table class="table align-middle mb-0 table-stack">
+            <thead><tr><th>{{ _('Variant') }}</th><th>{{ _('SKU') }}</th><th>{{ _('Price') }}</th><th>{{ _('Sale') }}</th><th>{{ _('Stock') }}</th><th>{{ _('Reserved') }}</th><th>{{ _('Active') }}</th></tr></thead>
+            <tbody>
+            {% for v in product.variants %}
+              <tr>
+                <td data-label="Variant">{{ v.label or 'Default' }}</td>
+                <td data-label="SKU"><input class="form-control form-control-sm" name="v_{{ v.id }}_sku" value="{{ v.sku or '' }}"></td>
+                <td data-label="Price"><input class="form-control form-control-sm" type="number" step="0.01" min="0" name="v_{{ v.id }}_price" value="{{ v.price if v.price is not none else '' }}" placeholder="{{ product.price }}"></td>
+                <td data-label="Sale"><input class="form-control form-control-sm" type="number" step="0.01" min="0" name="v_{{ v.id }}_sale_price" value="{{ v.sale_price if v.sale_price is not none else '' }}"></td>
+                <td data-label="Stock"><input class="form-control form-control-sm" type="number" min="0" name="v_{{ v.id }}_stock" value="{{ v.stock }}"></td>
+                <td data-label="Reserved">{{ v.reserved }}</td>
+                <td data-label="Active"><input type="checkbox" class="form-check-input" name="v_{{ v.id }}_active" {{ 'checked' if v.is_active }}></td>
+              </tr>
+            {% endfor %}
+            </tbody></table></div>
+        {% endif %}
+      </div>
+
+      <div class="card p-3 p-md-4 mb-4">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Images') }}</h2>
+        {% if product and product.images %}
+        <div class="row g-2 mb-3">
+          {% for i in product.images %}
+            <div class="col-6 col-md-4">
+              <div class="border rounded p-2 h-100">
+                <img src="{{ i.url }}" alt="" class="w-100 mb-2" style="aspect-ratio:4/3;object-fit:cover;border-radius:6px">
+                <input class="form-control form-control-sm mb-1" name="img_{{ i.id }}_alt" value="{{ i.alt_text }}" placeholder="{{ _('Alt text') }}">
+                <div class="d-flex gap-2 align-items-center small">
+                  <input type="number" class="form-control form-control-sm" style="width:70px" name="img_{{ i.id }}_pos" value="{{ i.position }}" title="{{ _('Order') }}">
+                  <label class="form-check-label"><input type="radio" name="primary_image" value="{{ i.id }}" {{ 'checked' if i.is_primary }}> {{ _('primary') }}</label>
+                  <label class="form-check-label ms-auto text-danger"><input type="checkbox" name="img_{{ i.id }}_delete"> {{ _('remove') }}</label>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <label class="form-label">{{ _('Add images') }}</label>
+        <input type="file" name="images" multiple class="form-control mb-2" accept="image/png,image/jpeg,image/gif,image/webp">
+        <textarea name="new_image_urls" rows="2" class="form-control mb-2" placeholder="{{ _('…or image URLs, one per line') }}">{{ val('new_image_urls') }}</textarea>
+        <input name="new_image_alt" class="form-control" placeholder="{{ _('Alt text for new images (defaults to the product name)') }}">
       </div>
     </div>
-    <div class="col-12">
-      <label class="form-label">Image URL</label>
-      <input name="image_url" class="form-control"
-             value="{{ product.image_url if product else '' }}">
-    </div>
-    <div class="col-12">
-      <label class="form-label">Description</label>
-      <textarea name="description" rows="4" class="form-control">{{ product.description if product else '' }}</textarea>
-    </div>
-  </div>
 
-  <div class="d-flex gap-2 mt-4">
-    <button class="btn btn-dark">Save</button>
-    <a href="{{ url_for('staff.products') }}" class="btn btn-outline-dark">Cancel</a>
+    <div class="col-xl-4">
+      <div class="card p-3 p-md-4 mb-4">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Categories') }}</h2>
+        <label class="form-label">{{ _('Primary category') }}</label>
+        <select name="category_id" class="form-select mb-3">
+          <option value="">{{ _('— None —') }}</option>
+          {% for c, d in categories %}<option value="{{ c.id }}" {{ 'selected' if (product and product.category_id == c.id) or fd.get('category_id') == c.id|string }}>{{ '\u2003' * d }}{{ c.name }}{{ ' (internal)' if c.is_internal }}</option>{% endfor %}
+        </select>
+        <label class="form-label">{{ _('Also show in') }}</label>
+        <div class="check-scroll">
+          {% for c, d in categories %}
+            <div class="form-check" style="margin-inline-start: {{ d * 1.1 }}rem">
+              <input class="form-check-input" type="checkbox" name="category_ids" id="pc{{ c.id }}" value="{{ c.id }}"
+                     {{ 'checked' if (product and c in product.categories) or c.id|string in fd.getlist('category_ids') }}>
+              <label class="form-check-label" for="pc{{ c.id }}">{{ c.name }}{% if c.is_internal %} <span class="badge text-bg-warning">{{ _('internal') }}</span>{% elif not c.visible %} <span class="badge text-bg-secondary">{{ _('hidden') }}</span>{% endif %}</label>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="form-text">{{ _('Products only in internal categories are not visible to shoppers.') }}</div>
+      </div>
+
+      <div class="card p-3 p-md-4 mb-4">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Tags') }}</h2>
+        <div class="check-scroll mb-2">
+          {% for t in tags %}
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="tag_ids" id="tg{{ t.id }}" value="{{ t.id }}"
+              {{ 'checked' if (product and t in product.tags) or t.id|string in fd.getlist('tag_ids') }}><label class="form-check-label" for="tg{{ t.id }}">{{ t.name }}</label></div>
+          {% else %}<small class="text-muted">{{ _('No tags yet — add some below.') }}</small>{% endfor %}
+        </div>
+        <input name="new_tags" class="form-control" placeholder="{{ _('New tags, comma separated') }}" value="{{ val('new_tags') }}">
+      </div>
+
+      <div class="card p-3 p-md-4 mb-4">
+        <h2 class="h6 text-muted text-uppercase mb-3">{{ _('Attributes') }}</h2>
+        <textarea name="attributes" rows="4" class="form-control" placeholder="{{ _('Material: Cotton&#10;Season: Summer, Winter') }}">{{ val('attributes', ('\n'.join(product_attr_lines)) if product_attr_lines is defined else '') }}</textarea>
+        <div class="form-text">{{ _('One per line:') }} <code>{{ _('Name: value, value') }}</code>{{ _('. Used for filters and search.') }}</div>
+      </div>
+    </div>
   </div>
+  <div class="d-flex gap-2 mt-2"><button class="btn btn-dark px-4">{{ _('Save product') }}</button><a href="{{ url_for('staff.products') }}" class="btn btn-outline-dark">{{ _('Back') }}</a></div>
 </form>
 {% endblock %}

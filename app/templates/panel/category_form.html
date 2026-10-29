@@ -1,28 +1,27 @@
 {% extends "panel/_base.html" %}
+{% set fd = form_data %}
 {% block title %}{{ 'Edit' if category else 'New' }} category · Panel{% endblock %}
 {% block panel_title %}{{ 'Edit' if category else 'New' }} category{% endblock %}
-
 {% block panel_content %}
-<form method="post" class="card p-4" style="max-width:560px;">
-  <div class="mb-3">
-    <label class="form-label">Name</label>
-    <input name="name" class="form-control" required value="{{ category.name if category else '' }}">
+<form method="post" enctype="multipart/form-data" class="card p-3 p-md-4 panel-form" style="max-width:640px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="mb-3"><label class="form-label">{{ _('Name') }}</label><input name="name" class="form-control" required value="{{ fd.get('name', category.name if category else '') }}"></div>
+  <div class="mb-3"><label class="form-label">{{ _('Parent category') }}</label>
+    <select name="parent_id" class="form-select"><option value="">{{ _('— Top level —') }}</option>
+      {% for c, d in parents %}<option value="{{ c.id }}" {{ 'selected' if parent_id == c.id }}>{{ '\u2003' * d }}{{ c.name }}</option>{% endfor %}
+    </select><div class="form-text">{{ _('Any depth is allowed. A category cannot be moved under itself or its own sub-categories.') }}</div></div>
+  <div class="row g-3 mb-3">
+    <div class="col-md-8"><label class="form-label">{{ _('Slug (URL)') }}</label><input name="slug" class="form-control" value="{{ fd.get('slug', category.slug if category else '') }}" placeholder="{{ _('auto from name') }}"></div>
+    <div class="col-md-4"><label class="form-label">{{ _('Sort order') }}</label><input type="number" name="sort_order" class="form-control" value="{{ fd.get('sort_order', category.sort_order if category else 0) }}"></div>
   </div>
-  <div class="mb-3">
-    <label class="form-label">Image URL</label>
-    <input name="image_url" class="form-control" value="{{ category.image_url if category else '' }}">
-    {% if category and category.image_url %}
-      <img src="{{ category.image_url }}" alt="" class="mt-2" style="width:100px;height:100px;object-fit:cover;border-radius:8px;">
-    {% endif %}
-  </div>
-  <div class="form-check mb-4">
-    <input type="checkbox" class="form-check-input" name="visible" id="visible"
-           {% if not category or category.visible %}checked{% endif %}>
-    <label class="form-check-label" for="visible">Visible to customers</label>
-  </div>
-  <div class="d-flex gap-2">
-    <button class="btn btn-dark">Save</button>
-    <a href="{{ url_for('staff.categories') }}" class="btn btn-outline-dark">Cancel</a>
-  </div>
+  <div class="mb-3"><label class="form-label">{{ _('Description') }}</label><textarea name="description" class="form-control" rows="2">{{ fd.get('description', category.description if category else '') }}</textarea></div>
+  <div class="mb-3"><label class="form-label">{{ _('Image') }}</label>
+    {% if category and category.image_url %}<img src="{{ category.image_url }}" alt="" class="mb-2 d-block" style="width:100px;height:100px;object-fit:cover;border-radius:8px;">{% endif %}
+    <input name="image_url" class="form-control mb-1" placeholder="{{ _('https://…') }}" value="{{ fd.get('image_url', category.image_url if category else '') }}">
+    <input type="file" name="image" class="form-control" accept="image/png,image/jpeg,image/gif,image/webp"></div>
+  <div class="form-check mb-2"><input type="checkbox" class="form-check-input" name="visible" id="visible" {{ 'checked' if (fd.get('visible') == 'on') if fd else (not category or category.visible) }}><label class="form-check-label" for="visible">{{ _('Visible to customers') }}</label></div>
+  <div class="form-check mb-4"><input type="checkbox" class="form-check-input" name="is_internal" id="internal" {{ 'checked' if (fd.get('is_internal') == 'on') if fd else (category and category.is_internal) }}>
+    <label class="form-check-label" for="internal">{{ _('Internal only') }} <small class="text-muted">{{ _('— never shown in menus, search or browsing; use it to group products for homepage sections') }}</small></label></div>
+  <div class="d-flex gap-2"><button class="btn btn-dark">{{ _('Save') }}</button><a href="{{ url_for('staff.categories') }}" class="btn btn-outline-dark">{{ _('Cancel') }}</a></div>
 </form>
 {% endblock %}

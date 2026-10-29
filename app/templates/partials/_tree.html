@@ -1,0 +1,18 @@
+{# Recursive category tree (unlimited depth). Usage: {{ render_tree(nodes, 0) }} #}
+{% macro render_tree(nodes, depth=0, open_top=True) %}
+<ul class="cat-tree {{ 'cat-tree--root' if depth == 0 }}">
+  {% for n in nodes %}
+    {% set c = n.category %}
+    <li>
+      {% if n.children %}
+        <details {{ 'open' if (open_top and depth == 0) }}>
+          <summary><a href="{{ url_for('customer.category', slug=c.slug) }}">{{ c.name }}</a></summary>
+          {{ render_tree(n.children, depth + 1, open_top) }}
+        </details>
+      {% else %}
+        <a class="cat-tree__leaf" href="{{ url_for('customer.category', slug=c.slug) }}">{{ c.name }}</a>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+{% endmacro %}

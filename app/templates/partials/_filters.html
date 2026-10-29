@@ -1,0 +1,121 @@
+{% macro cat_nodes(nodes) %}
+<ul class="cat-tree cat-tree--filter">
+  {% for n in nodes %}{% set c = n.category %}
+  <li>
+    {% if n.children %}
+    <details {{ 'open' if (selected_paths|select('startswith', c.path)|list) }}>
+      <summary><span class="form-check d-inline-block">
+        <input class="form-check-input cat-check" type="checkbox" name="cat" value="{{ c.slug }}" id="c-{{ c.id }}" data-path="{{ c.path }}" {{ 'checked' if c.id in selected_cat_ids }}>
+        <label class="form-check-label" for="c-{{ c.id }}">{{ c.name }}</label></span></summary>
+      {{ cat_nodes(n.children) }}
+    </details>
+    {% else %}
+      <span class="form-check cat-tree__leaf">
+        <input class="form-check-input cat-check" type="checkbox" name="cat" value="{{ c.slug }}" id="c-{{ c.id }}" data-path="{{ c.path }}" {{ 'checked' if c.id in selected_cat_ids }}>
+        <label class="form-check-label" for="c-{{ c.id }}">{{ c.name }}</label></span>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}
+{# Filter form (GET). Lives in a sidebar on desktop and an offcanvas drawer on mobile. #}
+{% macro cat_nodes(nodes) %}
+<ul class="cat-tree cat-tree--root filter-cats">
+  {% for n in nodes %}{% set c = n.category %}
+  <li>
+    {% if n.children %}
+    <details {{ 'open' if c.id in open_cat_ids }}>
+      <summary><span class="form-check d-inline-block m-0"><input class="form-check-input" type="checkbox" name="cat" value="{{ c.slug }}" id="c-{{ c.id }}" {{ 'checked' if c.slug in selected_cat_slugs }}>
+        <label class="form-check-label" for="c-{{ c.id }}">{{ c.name }}</label></span></summary>
+      <div class="ps-3">{{ cat_nodes(n.children) }}</div>
+    </details>
+    {% else %}
+    <div class="form-check cat-tree__leaf-check"><input class="form-check-input" type="checkbox" name="cat" value="{{ c.slug }}" id="c-{{ c.id }}" {{ 'checked' if c.slug in selected_cat_slugs }}>
+      <label class="form-check-label" for="c-{{ c.id }}">{{ c.name }}</label></div>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}
+<form id="filterForm" method="get" action="{{ url_for('customer.catalog') }}" class="filters">
+  {% if f.q %}<input type="hidden" name="q" value="{{ f.q }}">{% endif %}
+  {% if request.args.get('internal') %}<input type="hidden" name="internal" value="1">{% endif %}
+
+  {% if cat_tree %}
+  <details class="filters__group" open>
+    <summary>{{ _('Categories') }}</summary>
+    <div class="filter-list filter-list--tall">{{ cat_nodes(cat_tree) }}</div>
+  </details>
+  {% endif %}
+
+  {% if cat_tree %}
+  <details class="filters__group" open>
+    <summary>{{ _('Categories') }}</summary>
+    {{ cat_nodes(cat_tree) }}
+  </details>
+  {% endif %}
+
+  <details class="filters__group" open>
+    <summary>{{ _('Price') }}</summary>
+    <div class="d-flex gap-2 align-items-center">
+      <input type="number" min="0" step="any" name="min_price" class="form-control form-control-sm" placeholder="{{ _('Min') }}"
+             value="{{ f.min_price if f.min_price is not none }}" aria-label="{{ _('Minimum price') }}">
+      <span class="text-muted">–</span>
+      <input type="number" min="0" step="any" name="max_price" class="form-control form-control-sm" placeholder="{{ _('Max') }}"
+             value="{{ f.max_price if f.max_price is not none }}" aria-label="{{ _('Maximum price') }}">
+    </div>
+  </details>
+
+  <div class="form-check form-switch my-3">
+    <input class="form-check-input" type="checkbox" role="switch" id="inStock" name="in_stock" value="1" {{ 'checked' if f.in_stock }}>
+    <label class="form-check-label" for="inStock">{{ _('In stock only') }}</label>
+  </div>
+
+  {% for group, values in facets.options.items() %}
+  <details class="filters__group" open>
+    <summary>{{ group }}</summary>
+    <div class="filter-pills">
+      {% for key, label, n in values %}
+        <input type="checkbox" class="btn-check" id="o-{{ loop.index }}-{{ group|replace(' ', '_') }}" name="opt_{{ group }}" value="{{ key }}"
+               {{ 'checked' if key in f.options.get(group, []) }} autocomplete="off">
+        <label class="btn btn-sm btn-outline-dark" for="o-{{ loop.index }}-{{ group|replace(' ', '_') }}">{{ label }} <small class="opacity-75">{{ n }}</small></label>
+      {% endfor %}
+    </div>
+  </details>
+  {% endfor %}
+
+  {% if facets.tags %}
+  <details class="filters__group" open>
+    <summary>{{ _('Tags') }}</summary>
+    <div class="filter-list">
+      {% for slug, name, n in facets.tags %}
+        <div class="form-check {{ 'filter-more' if loop.index > 8 }}">
+          <input class="form-check-input" type="checkbox" id="t-{{ slug }}" name="tag" value="{{ slug }}" {{ 'checked' if slug in f.tags }}>
+          <label class="form-check-label" for="t-{{ slug }}">{{ name }} <small class="text-muted">({{ n }})</small></label>
+        </div>
+      {% endfor %}
+      {% if facets.tags|length > 8 %}<button type="button" class="btn btn-link btn-sm p-0" data-toggle-more>{{ _('Show more') }}</button>{% endif %}
+    </div>
+  </details>
+  {% endif %}
+
+  {% for (aslug, aname), values in facets.attrs.items() %}
+  <details class="filters__group">
+    <summary>{{ aname }}</summary>
+    <div class="filter-list">
+      {% for vslug, label, n in values %}
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="a-{{ aslug }}-{{ vslug }}" name="a_{{ aslug }}" value="{{ vslug }}"
+                 {{ 'checked' if vslug in f.attrs.get(aslug, []) }}>
+          <label class="form-check-label" for="a-{{ aslug }}-{{ vslug }}">{{ label }} <small class="text-muted">({{ n }})</small></label>
+        </div>
+      {% endfor %}
+    </div>
+  </details>
+  {% endfor %}
+
+  <div class="filters__actions">
+    <button class="btn btn-dark w-100">{{ _('Show results') }}</button>
+    <a href="{{ url_for('customer.catalog') }}{{ '?q=' ~ f.q|urlencode if f.q }}" class="btn btn-link w-100">{{ _('Clear filters') }}</a>
+  </div>
+</form>

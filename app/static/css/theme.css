@@ -21,7 +21,7 @@
 
 * { box-sizing: border-box; }
 
-html, body { height: 100%; }
+html { min-height: 100%; }
 
 body {
   background: var(--bg);
@@ -305,8 +305,8 @@ a:hover { color: inherit; }
   color: var(--muted);
   font-weight: 500;
 }
-.panel__side a:hover { background: #f3f4f6; color: var(--text); }
-.panel__side a.active { background: var(--accent); color: #fff; }
+.panel__side a:hover { background: var(--hover-bg, #f3f4f6); color: var(--text); }
+.panel__side a.active { background: var(--accent); color: var(--accent-contrast); }
 .panel__side h6 {
   color: var(--muted);
   font-size: .75rem;
@@ -365,13 +365,14 @@ a:hover { color: inherit; }
 .stat__value { font-size: 1.75rem; font-weight: 700; margin-top: .25rem; }
 
 /* ---------- Alerts ---------- */
-.flashes { position: fixed; top: 80px; right: 1rem; z-index: 1080; max-width: 380px; }
+.flashes { position: fixed; top: 80px; inset-inline-end: 1rem; z-index: 1080; max-width: 380px; }
 .flashes .alert { box-shadow: var(--shadow); border-radius: var(--radius); }
 
 /* ---------- Utility ---------- */
 .text-muted { color: var(--muted) !important; }
 
 [data-bs-theme="dark"] {
+  --hover-bg: #1f2937;
   --bg: #0b0f14;
   --surface: #111827;
   --text: #e5e7eb;

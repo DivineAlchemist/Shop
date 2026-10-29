@@ -1,0 +1,27 @@
+{% extends "panel/_base.html" %}
+{% block title %}Tags · Panel{% endblock %}
+{% block panel_title %}Tags{% endblock %}
+{% block panel_content %}
+<form method="post" class="card p-3 mb-3 d-flex flex-row gap-2 flex-wrap">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input name="names" class="form-control flex-grow-1" style="min-width:200px" placeholder="{{ _('New tags, comma separated (e.g. summer, cotton, sale)') }}" required>
+  <button class="btn btn-dark">{{ _('Add tags') }}</button>
+</form>
+<div class="table-card"><table class="table align-middle mb-0 table-stack">
+  <thead><tr><th>{{ _('Tag') }}</th><th>{{ _('Products') }}</th><th></th></tr></thead>
+  <tbody>
+  {% for t, n in rows %}
+    <tr>
+      <td data-label="Tag">
+        <form method="post" action="{{ url_for('staff.tag_rename', tag_id=t.id) }}" class="d-flex gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input name="name" value="{{ t.name }}" class="form-control form-control-sm" style="max-width:240px"><button class="btn btn-sm btn-outline-dark">{{ _('Rename') }}</button>
+        </form>
+      </td>
+      <td data-label="Products">{{ n }}</td>
+      <td class="text-end"><form method="post" action="{{ url_for('staff.tag_delete', tag_id=t.id) }}" onsubmit="return confirm('Delete this tag from all products?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">{{ _('Delete') }}</button></form></td>
+    </tr>
+  {% else %}<tr><td colspan="3" class="text-center text-muted py-4">{{ _('No tags yet.') }}</td></tr>{% endfor %}
+  </tbody></table></div>
+{% endblock %}

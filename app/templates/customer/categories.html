@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "partials/_tree.html" import render_tree %}
+{% block title %}All categories · {{ store.store_name if store else 'Raven' }}{% endblock %}
+{% block content %}
+<div class="section py-4 py-md-5">
+  <h1 class="h3 mb-4">{{ _('All categories') }}</h1>
+  {% if tree %}
+    <div class="cat-columns">
+      {% for n in tree %}
+        <div class="card p-3 cat-columns__item">
+          <h2 class="h6 mb-2"><a href="{{ url_for('customer.category', slug=n.category.slug) }}">{{ n.category.name }}</a></h2>
+          {% if n.children %}{{ render_tree(n.children, 1, False) }}{% else %}<small class="text-muted">{{ _('No sub-categories') }}</small>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><i class="bi bi-tags"></i><p>{{ _('No categories yet.') }}</p></div>
+  {% endif %}
+</div>
+{% endblock %}

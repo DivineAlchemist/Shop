@@ -1,0 +1,12 @@
+{% if page and page.pages > 1 %}
+<nav aria-label="{{ _('Pages') }}" class="mt-4">
+  <ul class="pagination justify-content-center flex-wrap mb-0">
+    <li class="page-item {{ 'disabled' if not page.has_prev }}"><a class="page-link" href="{{ page_url(page.prev_num) if page.has_prev else '#' }}">{{ _('&laquo;') }}</a></li>
+    {% for n in page.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if n %}<li class="page-item {{ 'active' if n == page.page }}"><a class="page-link" href="{{ page_url(n) }}">{{ n }}</a></li>
+      {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+    {% endfor %}
+    <li class="page-item {{ 'disabled' if not page.has_next }}"><a class="page-link" href="{{ page_url(page.next_num) if page.has_next else '#' }}">{{ _('&raquo;') }}</a></li>
+  </ul>
+</nav>
+{% endif %}

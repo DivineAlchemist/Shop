@@ -1,41 +1,24 @@
-<footer class="footer">
-  <div class="footer__inner">
-    <div>
-      <div class="nav__brand text-white mb-3"><i class="bi bi-tree-fill"></i> Raven</div>
-      <p style="max-width: 280px;">Curated essentials for everyday life. Free shipping over $50.</p>
-    </div>
-    <div>
-      <h4>Shop</h4>
-      <ul class="list-unstyled d-grid gap-2">
-        <li><a href="{{ url_for('customer.index') }}">All products</a></li>
-        <li><a href="{{ url_for('customer.index', category=1) }}">Electronics</a></li>
-        <li><a href="{{ url_for('customer.index', category=2) }}">Books</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4>Support</h4>
-      <ul class="list-unstyled d-grid gap-2">
-        <li><a href="#">Shipping</a></li>
-        <li><a href="#">Returns</a></li>
-        <li><a href="#">Terms &amp; conditions</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4>Contact</h4>
-      <ul class="list-unstyled d-grid gap-2">
-        <li><i class="bi bi-envelope me-2"></i>hello@raven.example</li>
-        <li><i class="bi bi-telephone me-2"></i>958-775-6884</li>
-      </ul>
-      <div class="footer__social mt-3">
-        <a href="#"><i class="bi bi-facebook"></i></a>
-        <a href="#"><i class="bi bi-instagram"></i></a>
-        <a href="#"><i class="bi bi-telegram"></i></a>
-        <a href="#"><i class="bi bi-whatsapp"></i></a>
+<footer class="site-footer">
+  <div class="section py-4">
+    <div class="row g-3 align-items-start">
+      <div class="col-md-5">
+        <strong>{{ store.store_name if store else 'Raven' }}</strong>
+        {% if store and store.description %}<p class="small text-muted mb-0">{{ store.description }}</p>{% endif %}
+      </div>
+      <div class="col-6 col-md-4 small">
+        {% if store and store.contact_phone %}<div><i class="bi bi-telephone me-1"></i>{{ store.contact_phone }}</div>{% endif %}
+        {% if store and store.contact_email %}<div><i class="bi bi-envelope me-1"></i>{{ store.contact_email }}</div>{% endif %}
+        {% if store and store.address %}<div><i class="bi bi-geo-alt me-1"></i>{{ store.address }}</div>{% endif %}
+      </div>
+      <div class="col-6 col-md-3 small d-flex flex-wrap gap-2 justify-content-md-end">
+        {% for k, url in ((store.social_links or {}).items() if store else []) %}<a href="{{ url }}" rel="noopener" target="_blank">{{ k|capitalize }}</a>{% endfor %}
       </div>
     </div>
-  </div>
-  <div class="footer__bottom">
-    <span>&copy; {{ 2025 }} Raven. All rights reserved.</span>
-    <span>Made with care.</span>
+    {% if store and (store.shipping_info or store.return_policy) %}
+    <details class="small mt-3"><summary>{{ _('Shipping &amp; returns') }}</summary>
+      {% if store.shipping_info %}<p class="mb-1 mt-2"><strong>{{ _('Shipping:') }}</strong> {{ store.shipping_info }}</p>{% endif %}
+      {% if store.return_policy %}<p class="mb-0"><strong>{{ _('Returns:') }}</strong> {{ store.return_policy }}</p>{% endif %}
+    </details>{% endif %}
+    <div class="small text-muted mt-3">© {{ now_year if now_year is defined else '' }} {{ store.store_name if store else 'Raven' }}</div>
   </div>
 </footer>

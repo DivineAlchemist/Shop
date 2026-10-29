@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Edit address') if address else _('New address') }}{% endblock %}
+{% block content %}
+<div class="section py-4 py-md-5" style="max-width: 640px;">
+  <h1 class="h3 mb-3">{{ _('Edit address') if address else _('New address') }}</h1>
+  <form method="post" class="card p-3 p-md-4 row g-3 mx-0">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% set v = request.form if request.method == 'POST' else (address or {}) %}
+    <div class="col-md-6"><label class="form-label">{{ _('Label') }}</label><input name="label" class="form-control" placeholder="{{ _('Home, Work…') }}" value="{{ v.get('label', '') if v.get else v.label }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Recipient name') }}</label><input name="recipient_name" class="form-control" required value="{{ v.get('recipient_name', '') if v.get else v.recipient_name }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Phone') }}</label><input name="phone" class="form-control" required value="{{ v.get('phone', current_user.phone) if v.get else v.phone }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ _('City') }}</label><input name="city" class="form-control" value="{{ v.get('city', '') if v.get else v.city }}"></div>
+    <div class="col-12"><label class="form-label">{{ _('Address') }}</label><textarea name="address_line" class="form-control" rows="3" required>{{ v.get('address_line', '') if v.get else v.address_line }}</textarea></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Postal code') }}</label><input name="postal_code" class="form-control" value="{{ v.get('postal_code', '') if v.get else v.postal_code }}"></div>
+    <div class="col-md-6 d-flex align-items-end"><div class="form-check"><input type="checkbox" class="form-check-input" id="def" name="is_default" {{ 'checked' if address and address.is_default }}><label class="form-check-label" for="def">{{ _('Default address') }}</label></div></div>
+    <div class="col-12 d-flex gap-2"><button class="btn btn-dark">{{ _('Save') }}</button><a class="btn btn-outline-dark" href="{{ url_for('customer.addresses') }}">{{ _('Cancel') }}</a></div>
+  </form>
+</div>
+{% endblock %}

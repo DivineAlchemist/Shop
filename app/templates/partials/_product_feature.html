@@ -1,0 +1,20 @@
+{# Large single card used by the vertical homepage scroller #}
+{% set img = p.primary_image %}
+<article class="feature-card card">
+  <a href="{{ url_for('customer.product_detail', slug=p.slug) }}" class="feature-card__media">
+    <img src="{{ img.url if img else 'https://picsum.photos/seed/' ~ p.id ~ '/700/500' }}"
+         alt="{{ (img.alt_text if img and img.alt_text else p.name) }}" loading="lazy">
+  </a>
+  <div class="feature-card__body">
+    <small class="text-muted">{{ p.category.name if p.category and p.category.public_effective else '' }}</small>
+    <h3 class="h4 mt-1">{{ p.name }}</h3>
+    <p class="text-muted feature-card__desc">{{ (p.description or '')[:140] }}{% if (p.description or '')|length > 140 %}…{% endif %}</p>
+    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mt-auto">
+      <span class="h5 mb-0">
+        {% if p.on_sale %}<s class="text-muted small">{{ p.price|money }}</s> {% endif %}
+        {{ (p.min_price if p.min_price is not none else p.unit_price)|money }}
+      </span>
+      <a href="{{ url_for('customer.product_detail', slug=p.slug) }}" class="btn btn-dark">{{ _('View product') }}</a>
+    </div>
+  </div>
+</article>

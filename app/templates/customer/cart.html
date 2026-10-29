@@ -1,38 +1,39 @@
 {% extends "base.html" %}
-{% block title %}Cart · Raven{% endblock %}
+{% block title %}{{ _('Cart') }} · {{ store.store_name if store else 'Raven' }}{% endblock %}
 
 {% block content %}
-<div class="section py-5" style="max-width: 900px;">
-  <h1 class="h3 mb-4">Shopping cart</h1>
-
-  {% if items %}
+<div class="section py-4 py-md-5" style="max-width: 900px;">
+  <h1 class="h3 mb-4">{{ _('Shopping cart') }}</h1>
+  {% if lines %}
+    {% for l in lines if l.problem %}<div class="alert alert-warning">{{ l.problem }}</div>{% endfor %}
     <div class="table-card">
-      <table class="table align-middle mb-0">
-        <thead><tr><th>Product</th><th>Price</th><th style="width:140px;">Qty</th><th>Total</th><th></th></tr></thead>
+      <table class="table align-middle mb-0 table-stack">
+        <thead><tr><th>{{ _('Product') }}</th><th>{{ _('Price') }}</th><th style="width:130px;">{{ _('Qty') }}</th><th>{{ _('Total') }}</th><th></th></tr></thead>
         <tbody>
-        {% for item in items %}
+        {% for l in lines %}
           <tr>
-            <td>
+            <td data-label="Product">
               <div class="d-flex align-items-center gap-3">
-                <img src="{{ item.product.image_url or 'https://picsum.photos/seed/' ~ item.product.id ~ '/80/80' }}"
-                     style="width:56px;height:56px;object-fit:cover;border-radius:8px;" alt="">
+                <img src="{{ l.product.image_url or 'https://picsum.photos/seed/' ~ l.product.id ~ '/80/80' }}" class="thumb" alt="">
                 <div>
-                  <div class="fw-semibold">{{ item.product.name }}</div>
-                  <small class="text-muted">{{ item.product.category.name if item.product.category else '' }}</small>
+                  <a class="fw-semibold" href="{{ url_for('customer.product_detail', slug=l.product.slug) }}">{{ l.product.name }}</a>
+                  {% if l.variant and l.variant.label %}<div><small class="text-muted">{{ l.variant.options_labels.items()|map('join', ': ')|join(' · ') }}</small></div>{% endif %}
+                  {% if l.variant and l.variant.sku %}<div><small class="text-muted">SKU {{ l.variant.sku }}</small></div>{% endif %}
                 </div>
               </div>
             </td>
-            <td>${{ '%.2f'|format(item.product.price) }}</td>
-            <td>
-              <form method="post" action="{{ url_for('customer.update_cart', item_id=item.id) }}" class="d-flex">
-                <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
-                       class="form-control form-control-sm" onchange="this.form.submit()">
+            <td data-label="Price">{{ l.unit_price|money }}</td>
+            <td data-label="Qty">
+              <form method="post" action="{{ url_for('customer.update_cart', item_id=l.item.id) }}" class="d-flex">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="number" name="quantity" value="{{ l.qty }}" min="1" max="99" class="form-control form-control-sm" onchange="this.form.submit()" aria-label="{{ _('Quantity') }}">
               </form>
             </td>
-            <td><strong>${{ '%.2f'|format(item.product.price * item.quantity) }}</strong></td>
+            <td data-label="Total"><strong>{{ l.line_total|money }}</strong></td>
             <td class="text-end">
-              <form method="post" action="{{ url_for('customer.remove_from_cart', item_id=item.id) }}">
-                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              <form method="post" action="{{ url_for('customer.remove_from_cart', item_id=l.item.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-sm btn-outline-danger" aria-label="{{ _('Remove') }}"><i class="bi bi-trash"></i></button>
               </form>
             </td>
           </tr>
@@ -40,21 +41,17 @@
         </tbody>
       </table>
     </div>
-
     <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-3">
-      <a href="{{ url_for('customer.index') }}" class="btn btn-outline-dark"><i class="bi bi-arrow-left me-1"></i>Continue shopping</a>
-      <div class="text-end">
-        <div class="text-muted small">Subtotal</div>
-        <div class="h3 mb-3">${{ '%.2f'|format(total) }}</div>
-        <a href="{{ url_for('customer.checkout') }}" class="btn btn-dark px-4">Checkout <i class="bi bi-arrow-right ms-1"></i></a>
+      <a href="{{ url_for('customer.catalog') }}" class="btn btn-outline-dark"><i class="bi bi-arrow-left me-1"></i>{{ _('Continue shopping') }}</a>
+      <div class="text-end ms-auto">
+        <div class="text-muted small">{{ _('Subtotal') }}</div>
+        <div class="h3 mb-3">{{ total|money }}</div>
+        <a href="{{ url_for('customer.checkout') }}" class="btn btn-dark px-4">{{ _('Checkout') }} <i class="bi bi-arrow-right ms-1"></i></a>
       </div>
     </div>
   {% else %}
-    <div class="empty">
-      <i class="bi bi-bag"></i>
-      <p>Your cart is empty.</p>
-      <a href="{{ url_for('customer.index') }}" class="btn btn-dark mt-3">Browse products</a>
-    </div>
+    <div class="empty"><i class="bi bi-bag"></i><p>{{ _('Your cart is empty.') }}</p>
+      <a href="{{ url_for('customer.catalog') }}" class="btn btn-dark mt-3">{{ _('Browse products') }}</a></div>
   {% endif %}
 </div>
 {% endblock %}

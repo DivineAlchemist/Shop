@@ -1,35 +1,26 @@
 {% extends "base.html" %}
-{% block title %}My profile · Raven{% endblock %}
-
+{% block title %}{{ _('My profile') }}{% endblock %}
 {% block content %}
-<div class="section py-5" style="max-width: 700px;">
-  <h1 class="h3 mb-4">My profile</h1>
-
-  <div class="card p-4 mb-4">
-    <h2 class="h6 text-muted text-uppercase mb-3">Account</h2>
-    <dl class="row mb-0">
-      <dt class="col-sm-3">Name</dt><dd class="col-sm-9">{{ current_user.name }}</dd>
-      <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">{{ current_user.phone }}</dd>
-      <dt class="col-sm-3">Role</dt><dd class="col-sm-9">{{ current_user.role }}</dd>
-      <dt class="col-sm-3">Member since</dt><dd class="col-sm-9">{{ current_user.created_at.strftime('%b %d, %Y') }}</dd>
-    </dl>
+<div class="section py-4 py-md-5" style="max-width: 640px;">
+  <h1 class="h3 mb-4">{{ _('My profile') }}</h1>
+  <div class="card p-3 p-md-4 mb-3">
+    <div class="fw-semibold">{{ current_user.name }}</div>
+    <div class="text-muted">{{ current_user.phone }}</div>
+    <div class="small text-muted mt-1">{{ _('Role') }}: {{ current_user.role }}</div>
   </div>
-
-  <div class="row g-3">
-    <div class="col-6">
-      <a href="{{ url_for('customer.orders') }}" class="card p-4 d-block text-center h-100">
-        <i class="bi bi-receipt fs-1 mb-2"></i>
-        <div class="fw-semibold">My orders</div>
-        <small class="text-muted">{{ current_user.orders|length }} order(s)</small>
-      </a>
-    </div>
-    <div class="col-6">
-      <a href="{{ url_for('customer.cart') }}" class="card p-4 d-block text-center h-100">
-        <i class="bi bi-bag fs-1 mb-2"></i>
-        <div class="fw-semibold">Cart</div>
-        <small class="text-muted">{{ current_user.cart_items|length }} item(s)</small>
-      </a>
-    </div>
+  <div class="card p-3 p-md-4 mb-3">
+    <h2 class="h6 text-muted text-uppercase">{{ _('Promotional SMS') }}</h2>
+    <form method="post" action="{{ url_for('customer.profile_marketing') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="consent" name="consent" {{ 'checked' if current_user.sms_marketing_consent }}>
+        <label class="form-check-label" for="consent">{{ _('Send me offers by SMS') }}</label></div>
+      <button class="btn btn-dark btn-sm">{{ _('Save') }}</button>
+    </form>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-dark" href="{{ url_for('customer.orders') }}">{{ _('My orders') }}</a>
+    <a class="btn btn-outline-dark" href="{{ url_for('customer.addresses') }}">{{ _('Addresses') }}</a>
+    <a class="btn btn-outline-dark" href="{{ url_for('customer.wishlist') }}">{{ _('Wishlist') }}</a>
   </div>
 </div>
 {% endblock %}

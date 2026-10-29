@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Wishlist') }}{% endblock %}
+{% block content %}
+<div class="section py-4 py-md-5">
+  <h1 class="h3 mb-4">{{ _('Wishlist') }}</h1>
+  {% if products %}<div class="grid grid--catalog">{% for p in products %}{% include 'partials/_product_card.html' %}{% endfor %}</div>
+  {% else %}<div class="empty"><i class="bi bi-heart"></i><p>{{ _('Nothing saved yet.') }}</p></div>{% endif %}
+</div>
+{% endblock %}

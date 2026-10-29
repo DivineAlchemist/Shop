@@ -1,0 +1,37 @@
+{% extends "panel/_base.html" %}
+{% block title %}Bulk import · Panel{% endblock %}
+{% block panel_title %}Bulk product import{% endblock %}
+{% block panel_actions %}
+  <a class="btn btn-outline-dark" href="{{ url_for('staff.import_template') }}"><i class="bi bi-download me-1"></i>{{ _('Template (.xlsx)') }}</a>
+  <a class="btn btn-outline-dark" href="{{ url_for('staff.export_products') }}"><i class="bi bi-box-arrow-down me-1"></i>{{ _('Export products') }}</a>
+{% endblock %}
+{% block panel_content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <form method="post" enctype="multipart/form-data" class="card p-3 p-md-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label">{{ _('Excel (.xlsx) or CSV file') }}</label>
+      <input type="file" name="file" class="form-control mb-3" accept=".xlsx,.csv" required>
+      <div class="form-check mb-1"><input class="form-check-input" type="radio" name="mode" id="m1" value="dry" checked><label class="form-check-label" for="m1">{{ _('Dry run — validate only, save nothing') }}</label></div>
+      <div class="form-check mb-3"><input class="form-check-input" type="radio" name="mode" id="m2" value="apply"><label class="form-check-label" for="m2">{{ _('Import — create/update products') }}</label></div>
+      <button class="btn btn-dark">{{ _('Upload') }}</button>
+      <div class="form-text mt-2">{{ _('Existing products are matched by SKU and updated; blank cells keep current values. Download the template for the exact columns (Products + optional Variants sheet).') }}</div>
+    </form>
+  </div>
+  <div class="col-lg-7">
+    {% if report %}
+    <div class="card p-3 p-md-4">
+      <h2 class="h6 text-muted text-uppercase">{{ 'Dry-run result' if report.dry_run else 'Import result' }}</h2>
+      <p class="mb-2"><span class="badge text-bg-success">{{ report.created }} created</span>
+        <span class="badge text-bg-info">{{ report.updated }} updated</span>
+        <span class="badge text-bg-secondary">{{ report.variants_updated }} variants</span>
+        <span class="badge text-bg-{{ 'danger' if report.errors else 'success' }}">{{ report.errors|length }} errors</span></p>
+      {% if report.errors %}
+      <div class="table-card"><table class="table table-sm mb-0"><thead><tr><th>{{ _('Sheet') }}</th><th>{{ _('Row') }}</th><th>{{ _('Problem') }}</th></tr></thead>
+        <tbody>{% for sheet, row, msg in report.errors[:200] %}<tr><td>{{ sheet }}</td><td>{{ row }}</td><td>{{ msg }}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

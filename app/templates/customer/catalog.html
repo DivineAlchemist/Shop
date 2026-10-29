@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name if category else (_('Search') ~ ': ' ~ search if search else _('Shop')) }} · {{ store.store_name if store else 'Raven' }}{% endblock %}
+{% block meta_description %}{{ (category.description if category and category.description) or (store.seo_description if store) or '' }}{% endblock %}
+{% block content %}
+<div class="section py-4">
+  <nav class="small text-muted mb-3 breadcrumbs" aria-label="{{ _('Breadcrumb') }}">
+    <a href="{{ url_for('customer.index') }}">{{ _('Home') }}</a> /
+    <a href="{{ url_for('customer.catalog') }}">{{ _('Shop') }}</a>
+    {% for c in crumbs %} / {% if loop.last %}<span>{{ c.name }}</span>{% else %}<a href="{{ url_for('customer.category', slug=c.slug) }}">{{ c.name }}</a>{% endif %}{% endfor %}
+    · <a href="{{ url_for('customer.categories') }}">{{ _('All categories') }}</a>
+  </nav>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-0">{{ category.name if category else (_('Results for') ~ ' “' ~ search ~ '”' if search else _('All products')) }}</h1>
+      <small class="text-muted">{{ page.total }} {{ _('products') }}</small>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <button class="btn btn-outline-dark d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterDrawer">
+        <i class="bi bi-sliders me-1"></i>{{ _('Filters') }}{% if chips %} <span class="badge text-bg-dark">{{ chips|length }}</span>{% endif %}
+      </button>
+      <select name="sort" form="filterForm" class="form-select" style="width:auto" aria-label="{{ _('Sort') }}" onchange="this.form.submit()">
+        {% for key, label in sorts.items() %}<option value="{{ key }}" {{ 'selected' if f.sort == key }}>{{ _(label) }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+
+  {% if children %}
+  <div class="subcats mb-3">
+    {% for c in children %}<a class="btn btn-sm btn-outline-dark" href="{{ url_for('customer.category', slug=c.slug) }}">{{ c.name }}</a>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if chips %}
+  <div class="chips mb-3">
+    {% for label, url in chips %}<a class="chip" href="{{ url }}">{{ label }} <i class="bi bi-x"></i></a>{% endfor %}
+    <a class="chip chip--clear" href="{{ url_for('customer.catalog') }}{{ '?q=' ~ f.q|urlencode if f.q }}">{{ _('Clear all') }}</a>
+  </div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-lg-3">
+      <div class="offcanvas-lg offcanvas-start filter-drawer" tabindex="-1" id="filterDrawer" aria-labelledby="filterTitle">
+        <div class="offcanvas-header border-bottom">
+          <h5 class="offcanvas-title" id="filterTitle">{{ _('Filters') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#filterDrawer"></button>
+        </div>
+        <div class="offcanvas-body d-block p-3 p-lg-0">
+          {% include 'partials/_filters.html' %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-9">
+      {% if page.items %}
+        <div class="grid grid--catalog">
+          {% for p in page.items %}{% include 'partials/_product_card.html' %}{% endfor %}
+        </div>
+        {% include 'partials/_pagination.html' %}
+      {% else %}
+        <div class="empty"><i class="bi bi-search"></i><p>{{ _('No products match these filters.') }}</p>
+          <a class="btn btn-dark" href="{{ request.path }}">{{ _('Reset filters') }}</a></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -5,7 +5,7 @@
 {% block panel_content %}
 <div class="table-card">
   <table class="table mb-0 align-middle">
-    <thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+    <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Phone') }}</th><th>{{ _('Role') }}</th><th>{{ _('Joined') }}</th><th></th></tr></thead>
     <tbody>
       {% for u in users %}
         <tr>
@@ -18,7 +18,7 @@
                   <option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>
                 {% endfor %}
               </select>
-              <button class="btn btn-sm btn-outline-dark">Set</button>
+              <button class="btn btn-sm btn-outline-dark">{{ _('Set') }}</button>
             </form>
           </td>
           <td>{{ u.created_at.strftime('%b %d, %Y') }}</td>

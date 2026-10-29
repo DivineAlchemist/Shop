@@ -1,40 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Order #{{ order.id }} · Raven{% endblock %}
-
+{% block title %}Order #{{ order.id }} · {{ store.store_name if store else 'Raven' }}{% endblock %}
 {% block content %}
-<div class="section py-5" style="max-width: 800px;">
-  <a href="{{ url_for('customer.orders') }}" class="btn btn-sm btn-outline-dark mb-3"><i class="bi bi-arrow-left me-1"></i>Back to orders</a>
-
-  <div class="card p-4">
-    <div class="d-flex justify-content-between mb-3">
-      <div>
-        <h1 class="h4 mb-1">Order #{{ order.id }}</h1>
-        <small class="text-muted">Placed {{ order.created_at.strftime('%b %d, %Y at %H:%M') }}</small>
-      </div>
-      {% set colors = {'pending':'warning','processing':'info','shipped':'primary','delivered':'success','cancelled':'danger'} %}
-      <span class="badge text-bg-{{ colors.get(order.status, 'secondary') }} align-self-start">{{ order.status }}</span>
+<div class="section py-4 py-md-5" style="max-width: 820px;">
+  <a href="{{ url_for('customer.orders') }}" class="btn btn-sm btn-outline-dark mb-3"><i class="bi bi-arrow-left me-1"></i>{{ _('Back to orders') }}</a>
+  {% set colors = {'pending':'warning','preparing':'info','shipped':'primary','received':'success','cancelled':'danger','failed':'danger'} %}
+  <div class="card p-3 p-md-4">
+    <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+      <div><h1 class="h4 mb-1">{{ _('Order') }} #{{ order.id }}</h1><small class="text-muted">Placed {{ order.created_at.strftime('%b %d, %Y at %H:%M') }}</small></div>
+      <div class="text-end"><span class="badge text-bg-{{ colors.get(order.status, 'secondary') }}">{{ _(order.status) }}</span>
+        <div class="small text-muted mt-1">Payment: {{ _(order.payment_status) }}</div></div>
     </div>
 
-    <h2 class="h6 text-muted text-uppercase mt-4">Items</h2>
+    {% if order.tracking_code %}
+    <div class="alert alert-info py-2"><i class="bi bi-truck me-1"></i>{{ _('Shipped via') }} <strong>{{ order.shipment_provider }}</strong> {{ _('— tracking code') }} <strong>{{ order.tracking_code }}</strong></div>
+    {% endif %}
+
+    <h2 class="h6 text-muted text-uppercase mt-3">{{ _('Items') }}</h2>
     <ul class="list-unstyled">
       {% for item in order.items %}
-        <li class="d-flex justify-content-between py-2 border-bottom">
+        <li class="d-flex justify-content-between gap-3 py-2 border-bottom">
           <div>
-            <div class="fw-semibold">{{ item.product.name }}</div>
-            <small class="text-muted">{{ item.quantity }} × ${{ '%.2f'|format(item.price_at_purchase) }}</small>
+            <div class="fw-semibold">{{ item.display_name }}</div>
+            {% if item.options_snapshot %}<small class="text-muted d-block">{{ item.options_snapshot.items()|map('join', ': ')|join(' · ') }}</small>{% endif %}
+            {% if item.sku %}<small class="text-muted d-block">SKU {{ item.sku }}</small>{% endif %}
+            <small class="text-muted">{{ item.quantity }} × {{ item.unit_price|money }}</small>
           </div>
-          <strong>${{ '%.2f'|format(item.price_at_purchase * item.quantity) }}</strong>
+          <strong>{{ item.line_total|money }}</strong>
         </li>
       {% endfor %}
     </ul>
-
-    <div class="d-flex justify-content-between mt-3">
-      <strong>Total</strong>
-      <strong>${{ '%.2f'|format(order.total_amount) }}</strong>
+    <div class="ms-auto text-end" style="max-width:280px">
+      <div class="d-flex justify-content-between"><span>{{ _('Subtotal') }}</span><span>{{ order.subtotal|money }}</span></div>
+      {% if order.discount_total %}<div class="d-flex justify-content-between text-success"><span>Discount{% if order.coupon_code %} ({{ order.coupon_code }}){% endif %}</span><span>−{{ order.discount_total|money }}</span></div>{% endif %}
+      <div class="d-flex justify-content-between"><span>Shipping{% if order.shipping_method_name %} ({{ order.shipping_method_name }}){% endif %}</span><span>{{ order.shipping_total|money }}</span></div>
+      <div class="d-flex justify-content-between fw-bold border-top mt-1 pt-1"><span>{{ _('Total') }}</span><span>{{ order.total_amount|money }}</span></div>
     </div>
 
-    <h2 class="h6 text-muted text-uppercase mt-4">Shipping address</h2>
-    <p class="mb-0">{{ order.shipping_address }}</p>
+    <h2 class="h6 text-muted text-uppercase mt-4">{{ _('Shipping to') }}</h2>
+    <p class="mb-0">{{ order.ship_name }} {% if order.ship_phone %}· {{ order.ship_phone }}{% endif %}<br>{{ order.shipping_address }}</p>
+
+    <h2 class="h6 text-muted text-uppercase mt-4">{{ _('Progress') }}</h2>
+    <ol class="timeline">
+      {% for h in order.history %}<li><strong>{{ h.to_status }}</strong> <small class="text-muted">{{ h.created_at.strftime('%b %d, %H:%M') }}</small></li>{% endfor %}
+    </ol>
+
+    {% if order.user_id == current_user.id %}
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      {% if order.payment_method == 'online' and order.status == 'pending' and order.payment_status == 'unpaid' %}
+        <form method="post" action="{{ url_for('payment.pay', order_id=order.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-dark">{{ _('Pay now') }}</button></form>
+      {% endif %}
+      {% if order.status == 'pending' and order.payment_status == 'unpaid' %}
+        <form method="post" action="{{ url_for('customer.order_cancel', order_id=order.id) }}" onsubmit="return confirm('Cancel this order?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger">{{ _('Cancel order') }}</button></form>
+      {% endif %}
+      {% if order.status == 'shipped' %}
+        <form method="post" action="{{ url_for('customer.order_received', order_id=order.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-success">{{ _('I received my package') }}</button></form>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

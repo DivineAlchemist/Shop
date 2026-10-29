@@ -1,63 +1,86 @@
 {% extends "base.html" %}
-{% block title %}Shop · Raven{% endblock %}
+{% block title %}{{ store.seo_title or store.store_name if store else 'Raven' }}{% endblock %}
 
 {% block content %}
-
-{# ---------- Hero / featured slider ---------- #}
-{% if latest_products %}
-<div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+{# ---------- Banner slider (Banner model; each links to a product, category or URL) ---------- #}
+{% if banners %}
+<div id="heroCarousel" class="carousel slide carousel-fade hero" data-bs-ride="carousel">
+  {% if banners|length > 1 %}
+  <div class="carousel-indicators">
+    {% for b in banners %}<button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ loop.index0 }}" class="{{ 'active' if loop.first }}" aria-label="Slide {{ loop.index }}"></button>{% endfor %}
+  </div>
+  {% endif %}
   <div class="carousel-inner">
-    {% for p in latest_products %}
-      <div class="carousel-item {% if loop.first %}active{% endif %}">
-        <div style="position:relative; height:480px; overflow:hidden;">
-          <img src="{{ p.image_url or 'https://picsum.photos/seed/' ~ p.id ~ '/1600/600' }}"
-               class="w-100 h-100" style="object-fit:cover;" alt="{{ p.name }}">
-          <div style="position:absolute; inset:0; background:linear-gradient(to right, rgba(0,0,0,.55), transparent);"></div>
-          <div class="section" style="position:absolute; inset:0; display:flex; align-items:center;">
-            <div class="text-white" style="max-width:520px;">
-              <h2 class="display-5 fw-bold mb-2">{{ p.name }}</h2>
-              <p class="mb-4 opacity-75">{{ p.description[:140] }}{% if p.description|length > 140 %}…{% endif %}</p>
-              <a href="{{ url_for('customer.product_detail', slug=p.slug) }}" class="btn btn-light btn-lg px-4">View product</a>
+    {% for item in banners %}{% set b = item.banner %}
+      <div class="carousel-item {{ 'active' if loop.first }}" data-bs-interval="{{ b.autoplay_seconds * 1000 }}">
+        <div class="hero__slide">
+          {% if item.href %}<a href="{{ item.href }}" class="stretched-link" aria-label="{{ b.title or 'Banner' }}"></a>{% endif %}
+          <img src="{{ b.image_url }}" alt="{{ b.title }}" {{ 'loading=lazy' if not loop.first }}>
+          <div class="hero__shade"></div>
+          {% if b.title or b.subtitle or (b.button_text and item.href) %}
+          <div class="section hero__text">
+            <div class="text-white hero__copy">
+              {% if b.title %}<h2 class="hero__title fw-bold mb-2">{{ b.title }}</h2>{% endif %}
+              {% if b.subtitle %}<p class="mb-3 opacity-75">{{ b.subtitle }}</p>{% endif %}
+              {% if b.button_text and item.href %}<span class="btn btn-light btn-lg px-4">{{ b.button_text }}</span>{% endif %}
             </div>
           </div>
+          {% endif %}
         </div>
       </div>
     {% endfor %}
   </div>
-  <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon"></span>
-  </button>
-  <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-    <span class="carousel-control-next-icon"></span>
-  </button>
+  {% if banners|length > 1 %}
+  <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" aria-label="{{ _('Previous') }}"><span class="carousel-control-prev-icon"></span></button>
+  <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" aria-label="{{ _('Next') }}"><span class="carousel-control-next-icon"></span></button>
+  {% endif %}
 </div>
+{% elif store and store.banner_image_url %}
+<div class="hero"><div class="hero__slide">
+  {% if store.banner_link %}<a href="{{ store.banner_link }}" class="stretched-link" aria-label="{{ store.banner_title }}"></a>{% endif %}
+  <img src="{{ store.banner_image_url }}" alt="{{ store.banner_title }}"><div class="hero__shade"></div>
+  {% if store.banner_title %}<div class="section hero__text"><h2 class="hero__title text-white fw-bold">{{ store.banner_title }}</h2></div>{% endif %}
+</div></div>
 {% endif %}
 
-{# ---------- New arrivals ---------- #}
-{% if latest_products %}
-<div class="section--center"><span class="pill-title">New arrivals</span></div>
-<div class="section">
-  <div class="grid grid--center">
-    {% for p in latest_products %}
-      {% include 'partials/_product_card.html' %}
-    {% endfor %}
+{# ---------- Configurable sections: one big card, scroll vertically to the next product ---------- #}
+{% for entry in sections %}{% set s = entry.section %}
+<section class="hscroll section" data-autoscroll="{{ 1 if s.auto_scroll else 0 }}" data-interval="{{ s.scroll_interval * 1000 }}" aria-label="{{ s.display_title }}">
+  <div class="section--center"><span class="pill-title">{{ s.display_title }}</span></div>
+  {% if s.description %}<p class="text-center text-muted mt-2">{{ s.description }}</p>{% endif %}
+  <div class="hscroll__wrap">
+    <div class="hscroll__track" tabindex="0">
+      {% for p in entry.products %}<div class="hscroll__item">{% include 'partials/_product_feature.html' %}</div>{% endfor %}
+    </div>
+    {% if entry.products|length > 1 %}
+    <div class="hscroll__nav">
+      <button type="button" class="nav__icon-btn" data-hs="prev" aria-label="{{ _('Previous product') }}"><i class="bi bi-chevron-left"></i></button>
+      <div class="hscroll__dots">{% for p in entry.products %}<span></span>{% endfor %}</div>
+      <button type="button" class="nav__icon-btn" data-hs="next" aria-label="{{ _('Next product') }}"><i class="bi bi-chevron-right"></i></button>
+    </div>
+    {% endif %}
   </div>
-</div>
-{% endif %}
+  <div class="text-center mt-3">
+    {% if s.source_category and s.source_category.public_effective %}
+      <a class="btn btn-outline-dark" href="{{ url_for('customer.category', slug=s.source_category.slug) }}">{{ _('See all in') }} {{ s.source_category.name }}</a>
+    {% elif not s.source_category %}<a class="btn btn-outline-dark" href="{{ url_for('customer.catalog') }}">{{ _('Browse everything') }}</a>{% endif %}
+  </div>
+</section>
+{% endfor %}
 
 {# ---------- Shop by category ---------- #}
 {% if categories %}
-<div class="section--center"><span class="pill-title">Shop by category</span></div>
+<div class="section--center"><span class="pill-title">{{ _('Shop by category') }}</span></div>
 <div class="section">
   <div class="grid grid--center">
     {% for c in categories %}
-      <a class="cat-tile" href="{{ url_for('customer.index', category=c.id) }}">
-        <img src="{{ c.image_url or 'https://picsum.photos/seed/cat' ~ c.id ~ '/400/400' }}" alt="{{ c.name }}">
+      <a class="cat-tile" href="{{ url_for('customer.category', slug=c.slug) }}">
+        <img src="{{ c.image_url or 'https://picsum.photos/seed/cat' ~ c.id ~ '/400/400' }}" alt="" loading="lazy">
         <span>{{ c.name }}</span>
       </a>
     {% endfor %}
   </div>
+  <div class="text-center mt-3"><a href="{{ url_for('customer.categories') }}" class="btn btn-outline-dark">{{ _('View all categories') }}</a></div>
 </div>
 {% endif %}
-
 {% endblock %}

@@ -3,34 +3,32 @@
 {% block content %}
 <div class="panel">
   <aside class="panel__side">
-    <h6>Catalog</h6>
-    <a href="{{ url_for('staff.dashboard') }}" class="{{ 'active' if request.endpoint == 'staff.dashboard' }}">
-      <i class="bi bi-speedometer2"></i> Dashboard
-    </a>
-    <a href="{{ url_for('staff.products') }}" class="{{ 'active' if request.endpoint in ['staff.products','staff.product_new','staff.product_edit'] }}">
-      <i class="bi bi-box"></i> Products
-    </a>
-    <a href="{{ url_for('staff.categories') }}" class="{{ 'active' if request.endpoint in ['staff.categories','staff.category_new','staff.category_edit'] }}">
-      <i class="bi bi-tags"></i> Categories
-    </a>
+    <button class="panel__toggle d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#panelMenu" aria-expanded="false"><i class="bi bi-list me-1"></i>{{ _('Menu') }}</button>
+    <div id="panelMenu" class="collapse panel__menu">
+    <h6>{{ _('Catalog') }}</h6>
+    <a href="{{ url_for('staff.dashboard') }}" class="{{ 'active' if request.endpoint == 'staff.dashboard' }}"><i class="bi bi-speedometer2"></i> {{ _('Dashboard') }}</a>
+    <a href="{{ url_for('staff.products') }}" class="{{ 'active' if request.endpoint in ['staff.products','staff.product_new','staff.product_edit'] }}"><i class="bi bi-box"></i> {{ _('Products') }}</a>
+    <a href="{{ url_for('staff.categories') }}" class="{{ 'active' if request.endpoint in ['staff.categories','staff.category_new','staff.category_edit'] }}"><i class="bi bi-diagram-3"></i> {{ _('Categories') }}</a>
+    <a href="{{ url_for('staff.tags') }}" class="{{ 'active' if request.endpoint == 'staff.tags' }}"><i class="bi bi-tags"></i> {{ _('Tags') }}</a>
+    <a href="{{ url_for('staff.import_products') }}" class="{{ 'active' if request.endpoint == 'staff.import_products' }}"><i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Bulk import') }}</a>
 
-    <h6>Sales</h6>
-    <a href="{{ url_for('staff.orders') }}" class="{{ 'active' if request.endpoint in ['staff.orders','staff.order_detail'] }}">
-      <i class="bi bi-bag-check"></i> Orders
-    </a>
+    <h6>{{ _('Storefront') }}</h6>
+    <a href="{{ url_for('staff.banners') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('staff.banner') }}"><i class="bi bi-images"></i> {{ _('Slider banners') }}</a>
+    <a href="{{ url_for('staff.sections') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('staff.section') }}"><i class="bi bi-layout-text-window"></i> {{ _('Homepage sections') }}</a>
+    <a href="{{ url_for('staff.store_settings') }}" class="{{ 'active' if request.endpoint == 'staff.store_settings' }}"><i class="bi bi-gear"></i> {{ _('Store settings') }}</a>
+
+    <h6>{{ _('Sales') }}</h6>
+    <a href="{{ url_for('staff.orders') }}" class="{{ 'active' if request.endpoint in ['staff.orders','staff.order_detail'] }}"><i class="bi bi-bag-check"></i> {{ _('Orders') }}</a>
+    <a href="{{ url_for('staff.coupons') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('staff.coupon') }}"><i class="bi bi-ticket-perforated"></i> {{ _('Coupons') }}</a>
+    <a href="{{ url_for('staff.shipping') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('staff.shipping') }}"><i class="bi bi-truck"></i> {{ _('Shipping') }}</a>
 
     {% if current_user.is_admin() %}
-      <h6>Admin</h6>
-      <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.endpoint == 'admin.dashboard' }}">
-        <i class="bi bi-shield-lock"></i> Overview
-      </a>
-      <a href="{{ url_for('admin.users') }}" class="{{ 'active' if request.endpoint == 'admin.users' }}">
-        <i class="bi bi-people"></i> Users
-      </a>
-      <a href="/admin-panel">
-        <i class="bi bi-database"></i> DB panel
-      </a>
+      <h6>{{ _('Admin') }}</h6>
+      <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.endpoint == 'admin.dashboard' }}"><i class="bi bi-shield-lock"></i> {{ _('Overview') }}</a>
+      <a href="{{ url_for('admin.users') }}" class="{{ 'active' if request.endpoint == 'admin.users' }}"><i class="bi bi-people"></i> {{ _('Users') }}</a>
+      <a href="/admin-panel"><i class="bi bi-database"></i> {{ _('DB panel') }}</a>
     {% endif %}
+    </div>
   </aside>
 
   <section class="panel__main">

@@ -1,9 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ locale }}" dir="{{ text_dir }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Raven{% endblock %}</title>
+  <title>{% block title %}{{ store.seo_title or store.store_name if store else 'Raven' }}{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{{ (store.seo_description or store.description) if store else '' }}{% endblock %}">
+  {% if store and store.seo_keywords %}<meta name="keywords" content="{{ store.seo_keywords }}">{% endif %}
+  <link rel="canonical" href="{{ (config.SITE_URL or request.url_root).rstrip('/') ~ request.path }}">
+  <meta property="og:title" content="{{ self.title() }}">
+  <meta property="og:type" content="website">
+  {% if store and store.og_image_url %}<meta property="og:image" content="{{ store.og_image_url }}">{% endif %}
+  {% if store and store.favicon_url %}<link rel="icon" href="{{ store.favicon_url }}">{% endif %}
   <script>
   (function () {
     const saved = localStorage.getItem('theme');
@@ -11,9 +18,11 @@
     document.documentElement.setAttribute('data-bs-theme', saved || prefers);
   })();
 </script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap{{ '.rtl' if text_dir == 'rtl' }}.min.css" rel="stylesheet">
+  {% if locale == 'fa' %}<link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css" rel="stylesheet">{% endif %}
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -23,10 +32,10 @@
   <div class="collapse" id="searchPanel">
     <div class="search-panel py-3">
       <div class="section">
-        <form class="d-flex gap-2" method="get" action="{{ url_for('customer.index') }}">
+        <form class="d-flex gap-2" method="get" action="{{ url_for('customer.catalog') }}">
           <input class="form-control" type="search" name="q"
-                 value="{{ request.args.get('q', '') }}" placeholder="Search products...">
-          <button class="btn btn-dark px-4">Search</button>
+                 value="{{ request.args.get('q', '') }}" placeholder="{{ _('Search products...') }}">
+          <button class="btn btn-dark px-4">{{ _('Search') }}</button>
         </form>
       </div>
     </div>

@@ -1,14 +1,19 @@
-<div class="card h-100">
-  <a href="{{ url_for('customer.product_detail', slug=p.slug) }}">
-    <img src="{{ p.image_url or 'https://picsum.photos/seed/' ~ p.id ~ '/500/375' }}"
-         class="card__img" alt="{{ p.name }}">
+{% set img = p.primary_image %}
+<div class="card h-100 product-card">
+  <a href="{{ url_for('customer.product_detail', slug=p.slug) }}" class="product-card__media">
+    <img src="{{ img.url if img else 'https://picsum.photos/seed/' ~ p.id ~ '/500/375' }}"
+         class="card__img" alt="{{ (img.alt_text if img and img.alt_text else p.name) }}" loading="lazy">
+    {% if p.on_sale %}<span class="badge text-bg-danger product-card__badge">{{ _('Sale') }}</span>{% endif %}
   </a>
   <div class="card__body d-flex flex-column">
-    <small class="text-muted">{{ p.category.name if p.category else 'Uncategorized' }}</small>
+    <small class="text-muted">{{ p.category.name if p.category and p.category.public_effective else '' }}</small>
     <h6 class="mt-1 mb-2">{{ p.name }}</h6>
-    <div class="mt-auto d-flex justify-content-between align-items-center">
-      <strong>${{ '%.2f'|format(p.price) }}</strong>
-      <a href="{{ url_for('customer.product_detail', slug=p.slug) }}" class="btn btn-sm btn-outline-dark">View</a>
+    <div class="mt-auto d-flex justify-content-between align-items-center gap-2 flex-wrap">
+      <span class="price">
+        {% if p.on_sale %}<s class="text-muted small">{{ p.price|money }}</s> {% endif %}
+        <strong>{{ (p.min_price if p.min_price is not none else p.unit_price)|money }}</strong>
+      </span>
+      <a href="{{ url_for('customer.product_detail', slug=p.slug) }}" class="btn btn-sm btn-outline-dark">{{ _('View') }}</a>
     </div>
   </div>
 </div>

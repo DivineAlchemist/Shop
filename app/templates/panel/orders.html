@@ -1,34 +1,31 @@
 {% extends "panel/_base.html" %}
 {% block title %}Orders · Panel{% endblock %}
 {% block panel_title %}Orders{% endblock %}
-
 {% block panel_content %}
 <div class="d-flex flex-wrap gap-2 mb-3">
-  {% for s in ['', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'] %}
-    <a href="{{ url_for('staff.orders', status=s) if s else url_for('staff.orders') }}"
-       class="btn btn-sm {{ 'btn-dark' if current_status == s or (not current_status and not s) else 'btn-outline-dark' }}">
-      {{ s|capitalize or 'All' }}
-    </a>
+  {% for s in [''] + statuses|list %}
+    <a href="{{ url_for('staff.orders', status=s) if s else url_for('staff.orders') }}" class="btn btn-sm {{ 'btn-dark' if current_status == s or (not current_status and not s) else 'btn-outline-dark' }}">{{ s|capitalize or 'All' }}</a>
   {% endfor %}
 </div>
-
+<form method="get" class="d-flex gap-2 mb-3"><input name="q" class="form-control" placeholder="{{ _('Order #, phone or tracking code') }}" value="{{ term }}">
+  {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}<button class="btn btn-dark">{{ _('Search') }}</button></form>
 <div class="table-card">
-  <table class="table mb-0 align-middle">
-    <thead><tr><th>#</th><th>Customer</th><th>Status</th><th>Total</th><th>Date</th><th></th></tr></thead>
+  <table class="table mb-0 align-middle table-stack">
+    <thead><tr><th>#</th><th>{{ _('Customer') }}</th><th>{{ _('Status') }}</th><th>{{ _('Payment') }}</th><th>{{ _('Total') }}</th><th>{{ _('Date') }}</th><th></th></tr></thead>
     <tbody>
       {% for o in orders %}
         <tr>
-          <td>#{{ o.id }}</td>
-          <td>{{ o.user.name }} <small class="text-muted">{{ o.user.phone }}</small></td>
-          <td><span class="badge text-bg-secondary">{{ o.status }}</span></td>
-          <td>${{ '%.2f'|format(o.total_amount) }}</td>
-          <td>{{ o.created_at.strftime('%b %d, %H:%M') }}</td>
-          <td class="text-end"><a href="{{ url_for('staff.order_detail', order_id=o.id) }}" class="btn btn-sm btn-outline-dark">Manage</a></td>
+          <td data-label="Order">#{{ o.id }}</td>
+          <td data-label="Customer">{{ o.user.name }} <small class="text-muted">{{ o.user.phone }}</small></td>
+          <td data-label="Status"><span class="badge text-bg-secondary">{{ _(o.status) }}</span></td>
+          <td data-label="Payment">{{ o.payment_method }} · {{ _(o.payment_status) }}</td>
+          <td data-label="Total">{{ o.total_amount|money }}</td>
+          <td data-label="Date">{{ o.created_at.strftime('%b %d, %H:%M') }}</td>
+          <td class="text-end"><a href="{{ url_for('staff.order_detail', order_id=o.id) }}" class="btn btn-sm btn-outline-dark">{{ _('Manage') }}</a></td>
         </tr>
-      {% else %}
-        <tr><td colspan="6" class="text-muted text-center py-4">No orders.</td></tr>
-      {% endfor %}
+      {% else %}<tr><td colspan="7" class="text-muted text-center py-4">{{ _('No orders.') }}</td></tr>{% endfor %}
     </tbody>
   </table>
 </div>
+{% include 'partials/_pagination.html' %}
 {% endblock %}
